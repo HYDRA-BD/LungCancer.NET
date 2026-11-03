@@ -5,20 +5,21 @@
 
 # 🫁 LungCancer.NET
 
-### Composite AI Clinical Pre-Screening & Risk Stratification System
+### Accessible AI Clinical Pre-Screening & Risk Stratification Portal
 
 **Detecting lung cancer risk *before* the CT scan — in communities that need it most.**
 
 [![AI Builders Congress](https://img.shields.io/badge/AI%20Builders%20Congress-2026-6f42c1?style=for-the-badge&logo=ai&logoColor=white)](https://example.com)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![WCAG 2.1 AA](https://img.shields.io/badge/WCAG%202.1%20AA-Compliant-059669?style=for-the-badge)](DESIGN.md)
 [![HIPAA Aligned](https://img.shields.io/badge/HIPAA-Aligned-00A86B?style=for-the-badge&logo=shield)](docs/security.md)
 
 <br/>
 
-**[🚀 Live Demo](#-quickstart)** &nbsp;·&nbsp;
-**[🔑 Authentication & Roles](#-authentication--role-based-access-control)** &nbsp;·&nbsp;
+**[🚀 Quickstart](#-quickstart)** &nbsp;·&nbsp;
+**[🔑 User Provisioning & Auth](#-user-provisioning--cryptographic-auth)** &nbsp;·&nbsp;
+**[🎨 Accessible UI/UX Design](#-accessible-uiux-design-for-older-adults)** &nbsp;·&nbsp;
 **[🛡️ Security Audit](#-security-audit--data-handling)** &nbsp;·&nbsp;
 **[⚡ Fast Personas](#-fast-evaluation-personas)** &nbsp;·&nbsp;
 **[🔌 MCP Server](#-model-context-protocol-mcp-server)**
@@ -37,55 +38,45 @@
 
 ---
 
-## ✨ Core Innovations
+## 🎨 Accessible UI/UX Design for Older Adults
 
-<table>
-<tr>
-<td width="50%" valign="top">
+LungCancer.NET has been redesigned from the ground up for healthcare providers and patients aged 45–80. See full design tokens and contrast metrics in [`DESIGN.md`](DESIGN.md).
 
-### 🎯 9-Predictor Ensemble Ladder
-Three calibrated gradient-boosted operational regimes:
-- **High Sensitivity** (weight 10) → rule-in capture
-- **Balanced Optimization** (weight 5) → $F_\beta$ calibration
-- **High Specificity** (weight 1) → rule-out protection
+- **High-Legibility Typography**: Base body copy is locked to $\ge 18\text{ px}$. Primary triage values and risk estimates scale to $32\text{--}38\text{ px}$.
+- **WCAG 2.1 AA High Contrast**: Strict compliance with contrast ratios: minimum 4.5:1 for body copy (up to 14.1:1) and 3:1 for all interactive boundaries.
+- **Accessible Touch & Hit Targets**: All primary buttons, stepper tabs, and input controls feature $\ge 48 \times 48\text{ px}$ clickable hit areas with $\ge 12\text{ px}$ spacing.
+- **Empathetic & Hopeful Palette**: Replaces sterile hospital grays with comforting deep marine (`#0B2545`), healing cyan (`#0284C7`), and gentle warm slates (`#F8FAFC`).
+- **Color-Blind Accessible Multi-Modal Triage**: No clinical result is ever communicated by color alone. Every risk tier couples color with an icon and plain-text description:
+  - 🚩 **REFER** — Terracotta badge + Flag icon + Immediate LDCT evaluation notice.
+  - 🔍 **REVIEW** — Warm amber badge + Magnifier icon + Shared clinical decision-making.
+  - 🛡️ **RULE-OUT** — Sage green badge + Shield icon + Routine annual surveillance.
+- **Linear 4-Step Progressive Intake**: Lowers cognitive load by organizing clinical data into 4 clearly numbered steps: Demographics, Inhalation History, Comorbidities, and Access Safeguards.
 
-</td>
-<td width="50%" valign="top">
+---
 
-### ⚖️ Equity-Aware Sensitivity Floor
-`RULE-OUT` is **never issued** unless sensitivity ≥ **85%** across *every* demographic & socioeconomic subgroup. Model disagreement or uncertainty shifts patients to the `REVIEW` band.
+## 🔑 User Provisioning & Cryptographic Auth
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+LungCancer.NET enforces zero-hardcoded credential security. No default passwords or sample credentials are baked into the source code, database, or UI.
 
-### 💰 Access-Aware Cost Function
-The missed-referral penalty is weighted **1.5×** for rural or financially-barriered patients — prioritizing timely clinical navigation.
+### Step 1: Provision Your Initial Account
+You can create your account either via the CLI tool or directly on the dashboard's "Create Account" tab:
 
-</td>
-<td width="50%" valign="top">
+```bash
+# Provision a Clinician account (Full Access: intake, predictions, PDF)
+python create_user.py --username drsmith --name "Dr. Sarah Smith, MD" --role clinician
 
-### 🧠 Patient-Specific XAI
-Real-time **SHAP waterfall attributions** decompose individual patient determinants (Pack-Years, Age, 5-Year PM2.5, COPD, Comorbidities).
+# Or provision an Auditor account (Read-Only: inspect model predictions & reports)
+python create_user.py --username auditor_alex --name "Alex Mercer" --role auditor
+```
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+*Note: If `--password` is omitted from the command line, `create_user.py` will prompt for a password securely without echoing it to the terminal.*
 
-### 📚 Local Semantic RAG
-**USPSTF** clinical screening guidelines indexed in local ChromaDB with sentence embeddings — on-device retrieval, zero external API leakage.
-
-</td>
-<td width="50%" valign="top">
-
-### 📄 Hospital-Grade PDF Reports
-Multi-page clinical reports with patient tables, XAI breakdowns, physician orders checklist, signature blocks, and a tamper-evident **SHA-256** integrity seal.
-
-</td>
-</tr>
-</table>
+### Cryptographic Security Specs
+- **Storage**: Local SQLite database stored in `artifacts/users.db` (never committed to git).
+- **Key Derivation Function**: **PBKDF2-HMAC-SHA256** with **250,000 iterations** and a 32-byte cryptographically secure random salt (`os.urandom(32)`).
+- **Timing Attack Mitigation**: Verifies passwords using constant-time `hmac.compare_digest`.
+- **Brute-Force Rate Limiting**: 5 consecutive failed login attempts automatically trigger a 60-second cooldown window.
+- **Schema Template**: An empty schema template is provided in [`users.example.json`](users.example.json).
 
 ---
 
@@ -106,45 +97,25 @@ flowchart LR
 
 ---
 
-## 🔑 Authentication & Role-Based Access Control
-
-LungCancer.NET includes a cryptographic authentication gate using salted **bcrypt** password hashing:
-
-### Pre-Configured Test Accounts (AI Builders Congress)
-
-| Role | Username | Password | Access Level & Permissions |
-|---|---|---|---|
-| 👨‍⚕️ **Clinician** | `clinician` | `ClinicianPass2026!` | **Full Access:** Patient intake modification, persona loading, risk execution, XAI breakdown, and PDF report generation. |
-| 🛡️ **Auditor** | `auditor` | `AuditorPass2026!` | **Read-Only Access:** Quality assurance audit mode. Intake fields and execution buttons are locked. Full access to inspect model outputs, SHAP waterfalls, guidelines, audit logs, and reports. |
-
-### Registering New Users
-Users can self-register directly through the **"📝 Register User"** tab on the authentication screen. Passwords must be at least 8 characters long and are hashed with 12 rounds of bcrypt before being stored in the session store.
-
----
-
 ## 🛡️ Security Audit & Data Handling
 
 A comprehensive security audit has been performed on the entire codebase:
 
 ### 1. Input Validation & Injection Prevention
-- **Patient Identifiers**: Regex sanitized (`^[A-Za-z0-9_-]{1,30}$`). All HTML tags, script tags, SQL injection characters, and directory traversal tokens are stripped.
+- **Patient Identifiers**: Regex sanitized (`^[A-Za-z0-9_-]{1,24}$`). All HTML tags, script tags, SQL injection characters, and directory traversal tokens are stripped.
 - **Biometric & Clinical Ranges**: All numeric inputs are clamped to strict physiological bounds:
   - Age: $[18, 100]$ years
   - BMI: $[10.0, 90.0]$ kg/m²
   - Pack-Years: $[0.0, 250.0]$ pack-years
   - 5-Year AQI / PM2.5: $[0.0, 500.0]$
-- **State Validation**: Validated against a strict whitelist of 50 US States.
+- **State Whitelist**: Validated against all 50 US States.
 - **RAG Queries**: Sanitized with length caps (max 300 characters) and bounded search depth ($k \in [1, 10]$).
 
 ### 2. Ephemeral In-Memory Data Handling (Zero Disk Writes)
-- **Zero Patient Data on Disk**: Patient data is **never** written to local disk, temp files, databases, or logs.
+- **Zero Patient Data on Disk**: Patient biometric information is **never** written to local disk, temp files, or logs.
 - **In-Memory PDF Generation**: PDF reports are synthesized in RAM via `io.BytesIO()` and streamed directly to the browser download button.
 - **Zero PII in Logs**: The tamper-evident session audit log records only one-way cryptographic SHA-256 hashes of patient references (`hashlib.sha256(pid.encode()).hexdigest()[:8]`), never patient identifiers or private health information.
 - **Zero-Retention Mode**: When logging out or resetting, all in-memory clinical state in `st.session_state` is purged.
-
-### 3. Protected External Integrations
-- **Local Ollama Integration**: Operates locally on `http://localhost:11434`. Prompts contain only de-identified, non-identifying aggregate biomarker numbers (Age, Pack-Years, Comorbidity flags).
-- **Deterministic Offline Fallback**: If Ollama or Docker is not running, the platform seamlessly falls back to a deterministic clinical pulmonology synthesis engine without making any network calls.
 
 ---
 
@@ -194,18 +165,16 @@ For judges and congress evaluators, the dashboard features **1-Click Quick-Load 
 git clone https://github.com/your-username/LungCancer.NET.git
 cd LungCancer.NET
 
-# Create and activate a virtual environment
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# Linux/macOS:
-source .venv/bin/activate
-
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Launch the Application
+### 2. Create Your First Account
+```bash
+python create_user.py --role clinician
+```
+
+### 3. Launch the Application
 ```bash
 streamlit run app.py
 ```
@@ -217,23 +186,26 @@ Open your browser to `http://localhost:8501`.
 
 ```
 LungCancer.NET/
-├── app.py                     # Secured Streamlit clinical pre-screening dashboard
-├── auth.py                    # Bcrypt authentication & Role-Based Access Control
+├── app.py                     # Accessible Streamlit clinical dashboard (WCAG 2.1 AA)
+├── auth.py                    # PBKDF2-HMAC-SHA256 authentication & RBAC engine
+├── create_user.py             # User provisioning CLI tool
+├── users.example.json         # Empty schema template for users
+├── DESIGN.md                  # Comprehensive design system, typography, & contrast specs
+├── CHANGELOG.md               # Detailed log of UI/UX and architectural changes
 ├── predictor.py               # Calibrated ensemble inference & SHAP engine
 ├── report_generator.py        # Hospital-grade PDF report builder (in-memory)
-├── mcp_server.py              # Secured, read-only MCP server (zero shell/write)
+├── mcp_server.py              # Secured, read-only MCP server (3 tools)
 ├── rag.py                     # Offline semantic USPSTF guideline search (ChromaDB)
 ├── aqi_cache.py               # 5-Year historical AQI & PM2.5 utility
-├── fetch_aqi_standalone.py    # AQI pre-fetching utility
 ├── artifacts/
+│   ├── users.db               # Local SQLite user store (git-ignored)
 │   ├── aqi_5yr_cache.json     # 50-state historical AQI/PM2.5 cache
 │   ├── policy.json            # Calibrated clinical triage thresholds (t_out, t_in)
 │   ├── shap_reference.json    # Normative population SHAP feature weights
 │   └── chroma/                # Local vector store with indexed USPSTF guidelines
 ├── assets/                    # Platform logos & watermarks
-├── data/                      # USPSTF lung cancer screening guideline PDF
 ├── requirements.txt           # Python package dependencies
-└── README.md                  # Project documentation & security audit report
+└── README.md                  # Documentation & quickstart guide
 ```
 
 ---

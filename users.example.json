@@ -1,0 +1,25 @@
+{
+  "description": "Template schema for LungCancer.NET users. Real accounts are stored in artifacts/users.db (SQLite) using PBKDF2-HMAC-SHA256 hashes.",
+  "users": [
+    {
+      "username": "example_clinician",
+      "email": "clinician@hospital.org",
+      "name": "Dr. Example Clinician, MD",
+      "role": "Clinician",
+      "password_hash_algorithm": "PBKDF2-HMAC-SHA256 (250,000 iterations)",
+      "salt_hex": "SAMPLE_SALT_HEX_ONLY",
+      "hash_hex": "SAMPLE_HASH_HEX_ONLY",
+      "created_at": "2026-01-01T00:00:00"
+    },
+    {
+      "username": "example_auditor",
+      "email": "auditor@qa-agency.org",
+      "name": "Example Auditor",
+      "role": "Auditor",
+      "password_hash_algorithm": "PBKDF2-HMAC-SHA256 (250,000 iterations)",
+      "salt_hex": "SAMPLE_SALT_HEX_ONLY",
+      "hash_hex": "SAMPLE_HASH_HEX_ONLY",
+      "created_at": "2026-01-01T00:00:00"
+    }
+  ]
+}

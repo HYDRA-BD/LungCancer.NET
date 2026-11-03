@@ -33,6 +33,8 @@ artifacts/aqi_errors.json
 # Caches and logs
 *.log
 .cache/
+*.db
+artifacts/*.db
 orchestrator_logs/
 shap_logs/
 # OS and binaries
