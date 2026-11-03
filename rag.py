@@ -4,15 +4,17 @@ rag.py — USPSTF guideline retrieval for LungCancer.NET
 Ingests the USPSTF lung cancer screening guideline PDF into a local
 ChromaDB vector store and exposes semantic search for the clinical
 pre-screening pipeline.
-
-Usage:
-    python rag.py --ingest        # build the vector store (once)
-    python rag.py --ingest --force  # rebuild from scratch
-    python rag.py                 # run a test query
 """
+from __future__ import annotations
+
+import os
 import re
 import sys
 from pathlib import Path
+
+# Force offline mode for cached HuggingFace sentence transformer embeddings
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 import chromadb
 from sentence_transformers import SentenceTransformer
@@ -96,7 +98,14 @@ def ingest(force: bool = False):
 
 
 def search_guidelines(query: str, k: int = 3):
-    """Return top-k guideline chunks matching the query."""
+    """Return top-k guideline chunks matching the query with safe bounds."""
+    # Sanitize and truncate query
+    clean_q = str(query).strip()[:300]
+    if not clean_q:
+        return []
+
+    safe_k = max(1, min(int(k), 10))
+
     CHROMA_PATH.mkdir(parents=True, exist_ok=True)
     client = chromadb.PersistentClient(path=str(CHROMA_PATH))
     try:
@@ -107,8 +116,8 @@ def search_guidelines(query: str, k: int = 3):
         return []
 
     embedder = _get_embedder()
-    q_emb = embedder.encode([query], convert_to_numpy=True).tolist()
-    res = col.query(query_embeddings=q_emb, n_results=k)
+    q_emb = embedder.encode([clean_q], convert_to_numpy=True).tolist()
+    res = col.query(query_embeddings=q_emb, n_results=safe_k)
     docs = res["documents"][0]
     metas = res["metadatas"][0]
     return [{"text": d, "page": m.get("page")} for d, m in zip(docs, metas)]
@@ -128,4 +137,3 @@ if __name__ == "__main__":
         for i, r in enumerate(results):
             print(f"\n--- Result {i+1} (page {r['page']}) ---")
             print(r["text"][:400])
-

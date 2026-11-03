@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -35,8 +35,9 @@ artifacts/aqi_errors.json
 .cache/
 orchestrator_logs/
 shap_logs/
-# OS
+# OS and binaries
 .DS_Store
 Thumbs.db
+*.exe
 
 # Backup of old git repo (never commit).git_broken_backup/

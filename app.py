@@ -1,17 +1,18 @@
 """
-app.py — LungCancer.NET Secured Clinical Pre-Screening Application.
+app.py — LungCancer.NET Secured Clinical Pre-Screening Dashboard.
 
-Designed for AI Builders Congress.
-Key Capabilities:
-  • Role-Based Clinical Access Gate (Pulmonologist, Triage Nurse, Evaluator)
-  • HIPAA-Aligned De-Identification & Zero-Retention Security Modes
-  • 1-Click Clinical Persona Quick-Loader for Congress Judging & Demos
-  • Composite Ensemble Predictor with Calibrated Triage Thresholds
-  • Patient-Specific Explainable AI (XAI) / SHAP Factor Attribution Waterfall
-  • Local Semantic RAG from USPSTF Clinical Screening Guidelines
-  • Local Ollama Clinical AI Assistant with Deterministic Clinical Fallback
-  • Hospital-Grade PDF Clinical Report Generator with Cryptographic Hash Seal
-  • Tamper-Evident Session Audit Trail Logging
+Design & Architectural Features:
+  • Modern Medical Dashboard Interface with Hospital-Grade Visual Aesthetics
+  • Cryptographic Authentication & Role-Based Access Control ('Clinician' vs 'Auditor')
+  • Read-Only Mode Enforcement for 'Auditor' Role (Intake locked, reports viewable)
+  • Strict Input Sanitization & Validation (XSS, Injection, Boundary Clamping)
+  • Zero-Retention Ephemeral Memory (No patient PII ever written to disk or logs)
+  • 1-Click Fast-Evaluation Personas (For Congress Judges & Evaluators)
+  • Calibrated Multi-Predictor Ensemble Scoring with Subgroup Sensitivity Floor
+  • Explainable AI (XAI) / Local SHAP Feature Waterfall Attribution
+  • USPSTF Clinical Guideline Semantic RAG Search (ChromaDB)
+  • On-Device AI Narrative Synthesis with Deterministic Clinical Fallback
+  • Hospital-Grade PDF Clinical Report Builder with SHA-256 Seal
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ import requests
 import streamlit as st
 
 # Core modular components
+from auth import authenticate_user, register_user
 from predictor import get_prediction
 
 try:
@@ -53,10 +55,10 @@ except Exception as _e:
 
 
 # ================================================================
-# CONFIGURATION & METADATA
+# CONFIGURATION & CONSTANTS
 # ================================================================
 st.set_page_config(
-    page_title="LungCancer.NET | Secured Clinical Screening",
+    page_title="LungCancer.NET | Clinical AI Pre-Screening Portal",
     page_icon="🫁",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -108,11 +110,12 @@ US_STATES = {
 # ================================================================
 # SESSION STATE INITIALIZATION
 # ================================================================
-st.session_state.setdefault("auth_user", "Auditor / Congress Evaluator")
-st.session_state.setdefault("auth_role", "Attending Pulmonologist")
-st.session_state.setdefault("is_authenticated", True)
-st.session_state.setdefault("deidentify", False)
-st.session_state.setdefault("zero_retention", False)
+st.session_state.setdefault("authenticated", False)
+st.session_state.setdefault("auth_user", "")
+st.session_state.setdefault("auth_role", "")
+st.session_state.setdefault("auth_name", "")
+st.session_state.setdefault("deidentify", True)  # HIPAA-safe by default
+st.session_state.setdefault("zero_retention", True)
 st.session_state.setdefault("audit_log", [])
 st.session_state.setdefault("analysis", None)
 st.session_state.setdefault("pdf_bytes", None)
@@ -126,37 +129,54 @@ if "aqi_cache" not in st.session_state:
 
 
 # ================================================================
-# SECURITY & AUDIT HELPERS
+# SECURITY & INPUT SANITIZATION HELPERS
 # ================================================================
-def sanitize_text(text: str, max_len: int = 50) -> str:
-    """Sanitize patient input strings against HTML / XSS / script injection."""
+def sanitize_patient_id(text: str) -> str:
+    """Strictly validates and sanitizes Patient ID (alphanumeric, dashes, underscores)."""
     if not text:
-        return ""
-    clean = re.sub(r"[<>{}\\\'\"`;]", "", str(text))
-    return clean.strip()[:max_len]
-
-
-def log_audit_event(action: str, details: str = "") -> None:
-    """Appends an event to the cryptographically hashed audit trail."""
-    timestamp = datetime.now().isoformat()
-    raw = f"{timestamp}|{st.session_state.auth_user}|{st.session_state.auth_role}|{action}|{details}"
-    event_hash = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
-    st.session_state.audit_log.append({
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "user": st.session_state.auth_user,
-        "role": st.session_state.auth_role,
-        "action": action,
-        "details": details,
-        "hash": event_hash,
-    })
+        return f"P-{int(time.time()) % 100000:05d}"
+    # Strip HTML / XSS / SQL injection characters
+    clean = re.sub(r"[^A-Za-z0-9_\-]", "", str(text).strip())
+    if not clean:
+        clean = f"P-{int(time.time()) % 100000:05d}"
+    return clean[:24]
 
 
 def get_display_patient_id(pid: str) -> str:
     """Returns de-identified patient ID if privacy mode is active."""
     if st.session_state.deidentify:
-        pseudo = hashlib.md5(pid.encode("utf-8")).hexdigest()[:6].upper()
+        # One-way SHA-256 pseudonym
+        pseudo = hashlib.sha256(pid.encode("utf-8")).hexdigest()[:6].upper()
         return f"ANON-{pseudo}"
     return pid
+
+
+def log_audit_event(action: str, details_summary: str = "") -> None:
+    """
+    Appends an event to the in-memory audit trail.
+    Ensures zero PII is written: patient references are one-way hashed.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    raw = f"{timestamp}|{st.session_state.auth_user}|{st.session_state.auth_role}|{action}|{details_summary}"
+    event_hash = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+    st.session_state.audit_log.append({
+        "timestamp": timestamp,
+        "user": st.session_state.auth_user,
+        "role": st.session_state.auth_role,
+        "action": action,
+        "details": details_summary,
+        "hash": event_hash,
+    })
+
+
+def purge_ephemeral_patient_data() -> None:
+    """Zero-Retention: completely flushes patient biometrics and analysis from memory."""
+    st.session_state.analysis = None
+    st.session_state.pdf_bytes = None
+    st.session_state.pdf_name = None
+    for k in ["patient_id", "w_kg", "h_cm", "w_lbs", "h_ft", "h_in", "packs", "years"]:
+        if k in st.session_state:
+            del st.session_state[k]
 
 
 # ================================================================
@@ -165,7 +185,7 @@ def get_display_patient_id(pid: str) -> str:
 @st.cache_data(ttl=30)
 def check_ollama():
     try:
-        r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=2)
+        r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=1.5)
         if r.status_code != 200:
             return False, []
         return True, [m["name"] for m in r.json().get("models", [])]
@@ -175,20 +195,19 @@ def check_ollama():
 
 def generate_clinical_summary(input_data: dict, tier: str, rec: str, state_name: str) -> str:
     """
-    Generates AI narrative. If local Ollama is offline, falls back seamlessly
-    to an evidence-based clinical pulmonology synthesis.
+    Generates an on-device clinical narrative.
+    Strictly zero PII sent: only non-identifying aggregate biomarkers are supplied.
     """
-    age = input_data.get("AGE", 50)
-    pkyrs = input_data.get("PACK_YEARS", 0.0)
+    age = int(input_data.get("AGE", 50))
+    pkyrs = float(input_data.get("PACK_YEARS", 0.0))
     resp = "Present" if input_data.get("RESP_BURDEN") else "Absent"
     chronic = "Present" if input_data.get("CHRONIC_BURDEN") else "Absent"
     aqi_val = input_data.get("AQI_5YR", "unknown")
 
-    # Fallback deterministic clinical synthesis
     fallback_text = (
-        f"Clinical Evaluation: Patient presents with an estimated cumulative tobacco exposure of "
-        f"{pkyrs:.1f} pack-years and documented respiratory status ({resp}). In conjunction with geographic "
-        f"5-year ambient particulate exposure (AQI {aqi_val}) in {state_name}, the composite ensemble stratifies this patient "
+        f"Clinical Evaluation: Individual presents with an estimated cumulative tobacco exposure of "
+        f"{pkyrs:.1f} pack-years and documented respiratory burden status ({resp}). In conjunction with 5-year "
+        f"ambient particulate exposure (AQI {aqi_val}) in {state_name}, the composite ensemble stratifies this case "
         f"into the '{tier}' category. Protocol recommendation: {rec}"
     )
 
@@ -199,7 +218,7 @@ def generate_clinical_summary(input_data: dict, tier: str, rec: str, state_name:
     prompt = f"""You are a clinical pulmonologist evaluating a population lung cancer pre-screening case.
 Write a concise, professional 2-sentence clinical assessment for the patient's medical chart.
 
-Patient Clinical Metrics:
+Clinical Metrics:
 - Age: {age} years
 - Smoking Exposure: {pkyrs:.1f} pack-years
 - Respiratory Burden (COPD/Asthma): {resp}
@@ -218,7 +237,7 @@ Provide an objective clinical synthesis highlighting the leading risk determinan
                 "stream": False,
                 "options": {"temperature": 0.2, "num_predict": 180},
             },
-            timeout=8,
+            timeout=6,
         )
         if r.status_code == 200:
             resp_txt = r.json().get("response", "").strip()
@@ -234,10 +253,9 @@ def retrieve_guidelines(input_data: dict, tier: str):
     if not RAG_OK:
         return []
     try:
-        q = (
-            f"lung cancer screening criteria age {input_data['AGE']} "
-            f"pack years {input_data['PACK_YEARS']:.1f} triage tier {tier}"
-        )
+        safe_age = int(input_data.get("AGE", 50))
+        safe_pkyrs = float(input_data.get("PACK_YEARS", 0.0))
+        q = f"lung cancer screening criteria age {safe_age} pack years {safe_pkyrs:.1f} triage tier {tier}"
         return search_guidelines(q, k=2)
     except Exception:
         return []
@@ -258,7 +276,7 @@ def get_aqi_badge(aqi: float | None) -> tuple[str, str]:
 
 
 # ================================================================
-# CLINICAL PERSONA PRESETS (FOR FAST CONGRESS DEMOS)
+# CLINICAL PERSONA PRESETS (FOR FAST EVALUATION)
 # ================================================================
 PERSONAS = {
     "🔴 High-Risk Heavy Smoker": {
@@ -282,7 +300,7 @@ PERSONAS = {
         "heart_attack": False, "chd": False, "stroke": False, "diabetes": False,
         "low_access": False,
     },
-    "🛡️ Vulnerable Subgroup (Equity Floor Triggered)": {
+    "🛡️ Vulnerable Subgroup (Equity Floor Active)": {
         "pid": "P-73012", "age": 58, "sex": "Male", "state": "West Virginia",
         "unit": "Imperial (lbs, ft/in)", "w_lbs": 210.0, "h_ft": 5, "h_in": 9,
         "packs": 1.0, "years": 22.0, "asthma": False, "copd": False,
@@ -321,71 +339,184 @@ def load_persona(p_name: str):
 
 
 # ================================================================
-# CUSTOM CSS STYLING
+# CLINICAL DASHBOARD STYLING
 # ================================================================
 st.markdown("""
 <style>
-    .main-header {
-        background: linear-gradient(135deg, #0F2E5C 0%, #1E40AF 100%);
+    /* Clinical Dashboard Theme */
+    .medical-top-bar {
+        background: linear-gradient(135deg, #0B2545 0%, #134074 60%, #0066CC 100%);
         color: white;
         padding: 18px 24px;
         border-radius: 10px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(11, 37, 69, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .user-pill {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        backdrop-filter: blur(4px);
+    }
+    .role-badge-clinician {
+        background-color: #22C55E;
+        color: #064E3B;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 11px;
+    }
+    .role-badge-auditor {
+        background-color: #F59E0B;
+        color: #78350F;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 11px;
     }
     .status-badge {
         display: inline-block;
         padding: 4px 10px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
-        margin-right: 8px;
+        margin-right: 6px;
     }
     .status-ok { background-color: #DCFCE7; color: #166534; }
     .status-warn { background-color: #FEF3C7; color: #92400E; }
     .status-err { background-color: #FEE2E2; color: #991B1B; }
-    .card-box {
+    .auditor-notice {
+        background-color: #FFFBEB;
+        border: 1px solid #FCD34D;
+        border-left: 5px solid #F59E0B;
+        color: #92400E;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .card-metric {
         background: #F8FAFC;
         border: 1px solid #E2E8F0;
         border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
-    }
-    .metric-value {
-        font-size: 26px;
-        font-weight: 700;
-        color: #0F2E5C;
+        padding: 14px 18px;
+        text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ================================================================
-# SIDEBAR — SECURITY, STATUS & AUDIT
+# AUTHENTICATION GATEWAY
+# ================================================================
+if not st.session_state.authenticated:
+    auth_col1, auth_col2, auth_col3 = st.columns([1, 2, 1])
+
+    with auth_col2:
+        if os.path.exists(LOGO_PATH):
+            st.image(LOGO_PATH, width=120)
+
+        st.markdown("## 🫁 LungCancer.NET")
+        st.markdown("#### Clinical AI Pre-Screening System · Authentication Gate")
+        st.caption("Secure cryptographic login required for clinical decision support access.")
+
+        auth_tab_login, auth_tab_register = st.tabs(["🔑 Sign In", "📝 Register User"])
+
+        with auth_tab_login:
+            login_user = st.text_input("Username", key="login_username").strip()
+            login_pass = st.text_input("Password", type="password", key="login_password")
+
+            if st.button("Sign In to Clinical Portal", type="primary", use_container_width=True, key="login_submit"):
+                success, role, name, msg = authenticate_user(login_user, login_pass)
+                if success:
+                    st.session_state.authenticated = True
+                    st.session_state.auth_user = login_user
+                    st.session_state.auth_role = role
+                    st.session_state.auth_name = name
+                    log_audit_event("AUTH_LOGIN", f"User '{login_user}' logged in as {role}")
+                    st.success(f"Welcome, {name}!")
+                    time.sleep(0.3)
+                    st.rerun()
+                else:
+                    st.error(msg)
+
+            st.markdown("---")
+            st.markdown("##### ⚡ Demo Evaluation Credentials (AI Builders Congress)")
+            c_cred1, c_cred2 = st.columns(2)
+            with c_cred1:
+                st.markdown("**Clinician (Full Access):**")
+                st.code("User: clinician\nPass: ClinicianPass2026!", language="text")
+            with c_cred2:
+                st.markdown("**Auditor (Read-Only):**")
+                st.code("User: auditor\nPass: AuditorPass2026!", language="text")
+
+        with auth_tab_register:
+            st.markdown("##### Create an Ephemeral Clinical Session Account")
+            new_user = st.text_input("Choose Username (alphanumeric)", key="reg_user")
+            new_name = st.text_input("Full Clinical Name", placeholder="Dr. Jane Doe, MD", key="reg_name")
+            new_role = st.selectbox("Assign System Role", ["Clinician", "Auditor"], index=0, key="reg_role")
+            new_pass = st.text_input("Choose Password (min 8 characters)", type="password", key="reg_pass")
+
+            if st.button("Register & Activate Account", use_container_width=True, key="reg_submit"):
+                reg_ok, reg_msg = register_user(new_user, new_pass, new_name, new_role)
+                if reg_ok:
+                    st.success(reg_msg + " You can now sign in above.")
+                else:
+                    st.error(reg_msg)
+
+    st.stop()
+
+
+# ================================================================
+# ACTIVE SESSION CONTEXT & ROLE-BASED ACCESS
+# ================================================================
+is_clinician = (st.session_state.auth_role == "Clinician")
+is_auditor = (st.session_state.auth_role == "Auditor")
+
+
+# ================================================================
+# SIDEBAR — SECURITY, SESSION & AUDIT TRAIL
 # ================================================================
 with st.sidebar:
     if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=140)
+        st.image(LOGO_PATH, width=130)
     st.markdown("### 🫁 LungCancer.NET")
-    st.caption("AI-Powered Clinical Pre-Screening Engine")
+    st.caption("AI Clinical Decision Support Engine")
 
     st.markdown("---")
-    st.subheader("🛡️ Security & Privacy Guard")
+    st.subheader("👤 User Session Profile")
+    st.markdown(f"**Name:** {st.session_state.auth_name}")
+    st.markdown(f"**Username:** `{st.session_state.auth_user}`")
 
-    # Role Selector
-    role_choice = st.selectbox(
-        "Active Role",
-        ["Attending Pulmonologist", "Clinical Triage Nurse", "Auditor / Congress Evaluator"],
-        index=0,
-        key="role_sel",
-    )
-    st.session_state.auth_role = role_choice
+    if is_clinician:
+        st.markdown('**Role:** <span class="role-badge-clinician">Clinician (Full Access)</span>', unsafe_allow_html=True)
+    else:
+        st.markdown('**Role:** <span class="role-badge-auditor">Auditor (Read-Only)</span>', unsafe_allow_html=True)
+
+    if st.button("🚪 Sign Out (Clear Session)", use_container_width=True, key="logout_btn"):
+        log_audit_event("AUTH_LOGOUT", f"User '{st.session_state.auth_user}' logged out")
+        purge_ephemeral_patient_data()
+        st.session_state.authenticated = False
+        st.session_state.auth_user = ""
+        st.session_state.auth_role = ""
+        st.session_state.auth_name = ""
+        st.rerun()
+
+    st.markdown("---")
+    st.subheader("🛡️ HIPAA & Security Guard")
 
     # HIPAA De-Identification Toggle
     deid_toggle = st.toggle(
         "HIPAA Privacy Shield",
         value=st.session_state.deidentify,
-        help="Masks Patient Identifiers on UI and generated PDF documents.",
+        help="Replaces Patient Identifiers with one-way SHA-256 pseudonyms across UI and reports.",
         key="deid_toggle_ui",
     )
     if deid_toggle != st.session_state.deidentify:
@@ -395,9 +526,9 @@ with st.sidebar:
 
     # Zero-Retention Mode Toggle
     zero_toggle = st.toggle(
-        "Zero-Retention Memory",
+        "Zero-Retention Mode",
         value=st.session_state.zero_retention,
-        help="Purges patient biometrics from server session immediately after triage.",
+        help="Guarantees patient biometric data is ephemeral and never written to disk.",
         key="zero_toggle_ui",
     )
     st.session_state.zero_retention = zero_toggle
@@ -408,10 +539,8 @@ with st.sidebar:
     ollama_up, models = check_ollama()
     if ollama_up:
         st.markdown('<span class="status-badge status-ok">● Ollama AI Online</span>', unsafe_allow_html=True)
-        st.caption(f"Model: {OLLAMA_MODEL}")
     else:
         st.markdown('<span class="status-badge status-warn">● Clinical Fallback Mode</span>', unsafe_allow_html=True)
-        st.caption("Deterministic Pulmonology Engine Active")
 
     if RAG_OK:
         st.markdown('<span class="status-badge status-ok">● USPSTF RAG Ready</span>', unsafe_allow_html=True)
@@ -426,15 +555,15 @@ with st.sidebar:
         st.markdown(f'<span class="status-badge status-warn">● AQI: {n_states}/50 Cached</span>', unsafe_allow_html=True)
 
     if PDF_GENERATOR_OK:
-        st.markdown('<span class="status-badge status-ok">● Clinical PDF Engine Ready</span>', unsafe_allow_html=True)
+        st.markdown('<span class="status-badge status-ok">● PDF Engine Ready</span>', unsafe_allow_html=True)
     else:
-        st.markdown('<span class="status-badge status-warn">● PDF Engine (reportlab needed)</span>', unsafe_allow_html=True)
+        st.markdown('<span class="status-badge status-warn">● PDF Module Missing</span>', unsafe_allow_html=True)
 
     st.markdown("---")
-    with st.expander("🔍 Tamper-Evident Audit Trail", expanded=False):
+    with st.expander("🔍 Ephemeral Session Audit Trail", expanded=False):
         if st.session_state.audit_log:
-            st.caption(f"Total Logged Events: {len(st.session_state.audit_log)}")
-            for log in reversed(st.session_state.audit_log[-8:]):
+            st.caption(f"Logged Events: {len(st.session_state.audit_log)} (Memory Only)")
+            for log in reversed(st.session_state.audit_log[-6:]):
                 st.markdown(f"**{log['timestamp']}** — `{log['action']}`")
                 st.caption(f"Role: {log['role']} | Hash: `{log['hash']}`")
         else:
@@ -442,48 +571,71 @@ with st.sidebar:
 
 
 # ================================================================
-# MAIN SCREEN HEADER
+# MEDICAL TOP BAR / DASHBOARD HEADER
 # ================================================================
-st.markdown("""
-<div class="main-header">
-    <h2 style="margin:0; padding:0; font-weight:700;">🫁 LungCancer.NET</h2>
-    <p style="margin:4px 0 0 0; opacity:0.9; font-size:14px;">
-        Secured Population-Level Clinical Pre-Screening System · AI Builders Congress 2026
-    </p>
+role_badge_html = (
+    '<span class="role-badge-clinician">Clinician (Full Access)</span>' if is_clinician
+    else '<span class="role-badge-auditor">Auditor (Read-Only)</span>'
+)
+
+st.markdown(f"""
+<div class="medical-top-bar">
+    <div>
+        <h2 style="margin:0; padding:0; font-weight:700; font-size:22px;">🫁 LungCancer.NET</h2>
+        <p style="margin:2px 0 0 0; opacity:0.85; font-size:13px;">
+            Clinical AI Pre-Screening & Triage Platform · AI Builders Congress 2026
+        </p>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+        <div class="user-pill">
+            👤 {st.session_state.auth_name} · {role_badge_html}
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------------------
-# QUICK-LOAD CLINICAL PERSONAS
-# -------------------------------------------------------------
-st.markdown("##### ⚡ Quick-Load Test Personas (for Congress Judges & Evaluators)")
+# Auditor Read-Only Notification Banner
+if is_auditor:
+    st.markdown("""
+    <div class="auditor-notice">
+        <b>🛡️ AUDITOR READ-ONLY MODE ACTIVE:</b> You are logged in with quality auditing privileges.
+        Patient intake fields and triage execution controls are locked. You have full permission to audit
+        model predictions, review local SHAP factor attributions, explore USPSTF clinical guidelines, and verify PDF reports.
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ================================================================
+# CLINICAL PERSONA QUICK-LOADER
+# ================================================================
+st.markdown("##### ⚡ Quick-Load Evaluation Personas")
 pcol1, pcol2, pcol3, pcol4 = st.columns(4)
 
 with pcol1:
-    if st.button("🔴 High-Risk Smoker", use_container_width=True, help="66yo, 32 yr smoking, COPD, Ohio"):
+    if st.button("🔴 High-Risk Heavy Smoker", disabled=is_auditor, use_container_width=True, help="66yo, 32 yr smoking, COPD, Ohio"):
         load_persona("🔴 High-Risk Heavy Smoker")
         st.rerun()
 
 with pcol2:
-    if st.button("🟢 Low-Risk Patient", use_container_width=True, help="29yo, non-smoker, healthy, Maine"):
+    if st.button("🟢 Low-Risk Young Non-Smoker", disabled=is_auditor, use_container_width=True, help="29yo, non-smoker, healthy, Maine"):
         load_persona("🟢 Low-Risk Young Non-Smoker")
         st.rerun()
 
 with pcol3:
-    if st.button("🟡 Borderline Review", use_container_width=True, help="53yo, 14 pk-yr, Asthma, California"):
+    if st.button("🟡 Borderline Complex Review", disabled=is_auditor, use_container_width=True, help="53yo, 14 pk-yr, Asthma, California"):
         load_persona("🟡 Intermediate / Borderline Review")
         st.rerun()
 
 with pcol4:
-    if st.button("🛡️ Equity / Access Barrier", use_container_width=True, help="58yo, 22 pk-yr, rural, cost barrier"):
-        load_persona("🛡️ Vulnerable Subgroup (Equity Floor Triggered)")
+    if st.button("🛡️ Vulnerable Subgroup (Equity Floor)", disabled=is_auditor, use_container_width=True, help="58yo, 22 pk-yr, rural, cost barrier"):
+        load_persona("🛡️ Vulnerable Subgroup (Equity Floor Active)")
         st.rerun()
 
 st.markdown("---")
 
 
 # ================================================================
-# CLINICAL INTAKE WORKFLOW
+# CLINICAL INTAKE WORKFLOW (LOCKED IN AUDITOR MODE)
 # ================================================================
 t1, t2, t3, t4 = st.tabs([
     "1️⃣ Demographics & Location",
@@ -497,28 +649,47 @@ with t1:
     c_pid, c_age, c_sex = st.columns([1.5, 1, 1])
     with c_pid:
         raw_pid = st.text_input(
-            "Patient ID / Record Ref",
+            "Patient Identifier / Medical Record #",
             value=st.session_state.get("patient_id", f"P-{int(time.time()) % 100000:05d}"),
+            disabled=is_auditor,
             key="patient_id",
         )
-        patient_id = sanitize_text(raw_pid, max_len=24)
+        patient_id = sanitize_patient_id(raw_pid)
         if st.session_state.deidentify:
             st.caption(f"🔒 Masked Display ID: **{get_display_patient_id(patient_id)}**")
 
     with c_age:
-        age_input = st.number_input("Age (18–100)", min_value=18, max_value=100, value=st.session_state.get("age", 52), key="age")
+        age_input = st.number_input(
+            "Age (18–100 years)",
+            min_value=18, max_value=100,
+            value=int(st.session_state.get("age", 52)),
+            disabled=is_auditor,
+            key="age",
+        )
 
     with c_sex:
-        sex_input = st.radio("Biological Sex", ["Male", "Female"], horizontal=True, key="sex")
+        sex_input = st.radio(
+            "Biological Sex",
+            ["Male", "Female"],
+            horizontal=True,
+            disabled=is_auditor,
+            key="sex",
+        )
         sex_code = 1 if sex_input == "Male" else 2
 
-    st.markdown("#### Geographic Environmental Exposure (5-Year AQI & PM2.5)")
+    st.markdown("#### Geographic Environmental Exposure (5-Year Historical AQI & PM2.5)")
     c_loc1, c_loc2, c_loc3 = st.columns([1.5, 1, 1])
 
     with c_loc1:
         default_state = st.session_state.get("sel_state", "Ohio")
         state_idx = list(US_STATES.keys()).index(default_state) if default_state in US_STATES else 0
-        selected_state = st.selectbox("Select US State", list(US_STATES.keys()), index=state_idx, key="sel_state")
+        selected_state = st.selectbox(
+            "Select US State of Residence",
+            list(US_STATES.keys()),
+            index=state_idx,
+            disabled=is_auditor,
+            key="sel_state",
+        )
 
     state_data = get_state_aqi(cache, selected_state) if AQI_MODULE_OK else None
     aqi_5yr = state_data["aqi_5yr"] if state_data else 42.0
@@ -531,30 +702,30 @@ with t1:
 
     with c_loc3:
         st.metric("5-Year Ambient PM2.5", f"{pm25_5yr:.1f} µg/m³")
-        st.caption("Matches CDC BRFSS Epidemiological Baseline")
+        st.caption("Matches CDC BRFSS Training Cohort")
 
     st.markdown("#### Physical Metrics & Body Mass Index")
     unit_col, metric_col1, metric_col2, bmi_res_col = st.columns([1.2, 1, 1, 1.2])
 
     with unit_col:
-        unit = st.radio("Unit Standard", ["Metric (kg, cm)", "Imperial (lbs, ft/in)"], key="unit")
+        unit = st.radio("Unit Standard", ["Metric (kg, cm)", "Imperial (lbs, ft/in)"], disabled=is_auditor, key="unit")
 
     if "Metric" in unit:
         with metric_col1:
-            w_kg = st.number_input("Weight (kg)", 30.0, 250.0, float(st.session_state.get("w_kg", 72.0)), key="w_kg")
+            w_kg = st.number_input("Weight (kg)", 30.0, 250.0, float(st.session_state.get("w_kg", 72.0)), disabled=is_auditor, key="w_kg")
         with metric_col2:
-            h_cm = st.number_input("Height (cm)", 100.0, 250.0, float(st.session_state.get("h_cm", 172.0)), key="h_cm")
+            h_cm = st.number_input("Height (cm)", 100.0, 250.0, float(st.session_state.get("h_cm", 172.0)), disabled=is_auditor, key="h_cm")
         bmi_val = w_kg / ((h_cm / 100.0) ** 2)
         hw_display = f"{h_cm:.0f} cm · {w_kg:.0f} kg"
     else:
         with metric_col1:
-            w_lbs = st.number_input("Weight (lbs)", 65.0, 500.0, float(st.session_state.get("w_lbs", 165.0)), key="w_lbs")
+            w_lbs = st.number_input("Weight (lbs)", 65.0, 500.0, float(st.session_state.get("w_lbs", 165.0)), disabled=is_auditor, key="w_lbs")
         with metric_col2:
             c_ft, c_in = st.columns(2)
             with c_ft:
-                h_ft = st.number_input("Height (ft)", 3, 7, int(st.session_state.get("h_ft", 5)), key="h_ft")
+                h_ft = st.number_input("Height (ft)", 3, 7, int(st.session_state.get("h_ft", 5)), disabled=is_auditor, key="h_ft")
             with c_in:
-                h_in = st.number_input("Height (in)", 0, 11, int(st.session_state.get("h_in", 8)), key="h_in")
+                h_in = st.number_input("Height (in)", 0, 11, int(st.session_state.get("h_in", 8)), disabled=is_auditor, key="h_in")
         total_inches = (h_ft * 12) + h_in
         bmi_val = (703.0 * w_lbs) / max(total_inches ** 2, 1.0)
         hw_display = f"{h_ft}'{h_in}\" · {w_lbs:.0f} lbs"
@@ -578,13 +749,13 @@ with t2:
         packs_day = st.number_input(
             "Packs Smoked Per Day",
             0.0, 8.0, float(st.session_state.get("packs", 0.0)),
-            step=0.5, key="packs",
+            step=0.5, disabled=is_auditor, key="packs",
         )
     with c_yrs:
         years_smoked = st.number_input(
             "Total Years Smoked",
             0.0, 80.0, float(st.session_state.get("years", 0.0)),
-            step=1.0, key="years",
+            step=1.0, disabled=is_auditor, key="years",
         )
 
     pack_years = packs_day * years_smoked
@@ -594,7 +765,7 @@ with t2:
         if pack_years >= 20.0:
             st.markdown('<span style="color:#DC2626; font-weight:700;">⚠️ USPSTF High-Risk Benchmark Met (≥20 pk-yrs)</span>', unsafe_allow_html=True)
         elif pack_years > 0:
-            st.caption("Moderate Exposure (<20 pk-yrs)")
+            st.caption("Moderate Tobacco Exposure (<20 pk-yrs)")
         else:
             st.caption("Non-smoker / Zero tobacco history")
 
@@ -606,8 +777,8 @@ with t3:
 
     with c_resp:
         st.markdown("**Chronic Respiratory Conditions**")
-        asthma = st.checkbox("Asthma", value=st.session_state.get("asthma", False), key="asthma")
-        copd = st.checkbox("COPD / Emphysema / Chronic Bronchitis", value=st.session_state.get("copd", False), key="copd")
+        asthma = st.checkbox("Asthma", value=st.session_state.get("asthma", False), disabled=is_auditor, key="asthma")
+        copd = st.checkbox("COPD / Emphysema / Chronic Bronchitis", value=st.session_state.get("copd", False), disabled=is_auditor, key="copd")
         resp_flag = 1 if (asthma or copd) else 0
 
         if resp_flag:
@@ -616,11 +787,11 @@ with t3:
             st.info("No chronic respiratory burden detected")
 
     with c_cardio:
-        st.markdown("**Cardiovascular & Metabolic Diseases**")
-        heart_attack = st.checkbox("Myocardial Infarction (Heart Attack)", value=st.session_state.get("heart_attack", False), key="heart_attack")
-        chd = st.checkbox("Coronary Heart Disease / Angina", value=st.session_state.get("chd", False), key="chd")
-        stroke = st.checkbox("Stroke / Cerebrovascular Event", value=st.session_state.get("stroke", False), key="stroke")
-        diabetes = st.checkbox("Diabetes Mellitus", value=st.session_state.get("diabetes", False), key="diabetes")
+        st.markdown("**Cardiovascular & Metabolic Comorbidities**")
+        heart_attack = st.checkbox("Myocardial Infarction (Heart Attack)", value=st.session_state.get("heart_attack", False), disabled=is_auditor, key="heart_attack")
+        chd = st.checkbox("Coronary Heart Disease / Angina", value=st.session_state.get("chd", False), disabled=is_auditor, key="chd")
+        stroke = st.checkbox("Stroke / Cerebrovascular Event", value=st.session_state.get("stroke", False), disabled=is_auditor, key="stroke")
+        diabetes = st.checkbox("Diabetes Mellitus", value=st.session_state.get("diabetes", False), disabled=is_auditor, key="diabetes")
         chronic_flag = 1 if (heart_attack or chd or stroke or diabetes) else 0
 
         if chronic_flag:
@@ -634,12 +805,13 @@ with t4:
     st.markdown("#### Healthcare Access & Subgroup Equity Safeguards")
     st.info(
         "LungCancer.NET incorporates an **Equity-Aware Subgroup Sensitivity Floor (≥85%)** and "
-        "an **Access-Aware Cost Multiplier (1.5x)**. Patients with structural barriers are protected from "
+        "an **Access-Aware Cost Multiplier (1.5x)**. Patients facing structural barriers are protected from "
         "unjustified rule-outs to ensure equitable triage in rural and underserved communities."
     )
     low_access = st.checkbox(
         "Patient belongs to a Low-Access Subgroup (Cost barrier to care / No annual routine checkup / Rural residence)",
         value=st.session_state.get("low_access", False),
+        disabled=is_auditor,
         key="low_access",
     )
     if low_access:
@@ -649,26 +821,34 @@ st.markdown("---")
 
 
 # ================================================================
-# RUN PRE-SCREENING BUTTON
+# PRE-SCREENING EXECUTION (LOCKED FOR AUDITOR)
 # ================================================================
 run_col1, run_col2 = st.columns([3, 1])
+
 with run_col1:
-    run_btn = st.button("🚀 Run Pre-Screening Ensemble Analysis", type="primary", use_container_width=True, key="run_btn")
+    btn_label = "🚀 Run Pre-Screening Analysis" if is_clinician else "🔒 Run Pre-Screening (Locked for Auditor)"
+    run_btn = st.button(
+        btn_label,
+        type="primary",
+        disabled=is_auditor,
+        use_container_width=True,
+        help="Execute the 9-predictor ensemble and XAI attribution" if is_clinician else "Auditor role has read-only access",
+        key="run_btn",
+    )
+
 with run_col2:
-    if st.button("🔄 Clear & Reset", use_container_width=True, key="clear_top"):
-        st.session_state.analysis = None
-        st.session_state.pdf_bytes = None
-        st.session_state.pdf_name = None
-        log_audit_event("RESET_SESSION")
+    if st.button("🔄 Reset Patient Record", disabled=is_auditor, use_container_width=True, key="clear_top"):
+        purge_ephemeral_patient_data()
+        log_audit_event("RESET_SESSION", "Cleared ephemeral patient data from RAM")
         st.rerun()
 
 
 # ================================================================
-# COMPUTE PREDICTION
+# COMPUTE PREDICTION (CLINICIAN ONLY)
 # ================================================================
-if run_btn:
+if run_btn and is_clinician:
     with st.spinner("Executing 9-predictor ensemble ladder & XAI attribution..."):
-        time.sleep(0.4)
+        time.sleep(0.3)
 
         patient_dict = {
             "patient_id": patient_id,
@@ -720,17 +900,16 @@ if run_btn:
         st.session_state.pdf_bytes = None
         st.session_state.pdf_name = None
 
+        # Log audit event with one-way hashed identifier (Zero PII in logs)
+        masked_id_hash = hashlib.sha256(patient_id.encode("utf-8")).hexdigest()[:8]
         log_audit_event(
             "EXECUTE_TRIAGE",
-            f"Patient={get_display_patient_id(patient_id)}, Tier={pred_res['tier']}, Score={pred_res['risk_score']:.6f}",
+            f"PatientHash={masked_id_hash}, Tier={pred_res['tier']}, Score={pred_res['risk_score']:.6f}",
         )
-
-        if st.session_state.zero_retention:
-            st.toast("Zero-Retention Active: Biometrics marked for ephemeral execution.", icon="🛡️")
 
 
 # ================================================================
-# DISPLAY RESULTS DASHBOARD
+# CLINICAL RESULTS DASHBOARD
 # ================================================================
 if st.session_state.analysis is not None:
     ans = st.session_state.analysis
@@ -758,6 +937,9 @@ if st.session_state.analysis is not None:
                 <p style="margin:0; color:#334155; font-size:15px; font-weight:500;">
                     <b>Action Plan:</b> {p['recommendation']}
                 </p>
+                <div style="margin-top:6px; font-size:12px; color:#64748B;">
+                    Record ID: <b>{pid_shown}</b> · Location: <b>{patient['state']}</b> · Assessed: <b>{ans['timestamp']}</b>
+                </div>
             </div>
             <div style="text-align:right;">
                 <span style="color:#64748B; font-size:12px; font-weight:600;">UNIFIED RISK ESTIMATE</span>
@@ -772,7 +954,6 @@ if st.session_state.analysis is not None:
     st.markdown("#### 📐 Calibrated Triage Boundaries")
     t_out_val = p["t_out"] * 100
     t_in_val = p["t_in"] * 100
-    score_pct = min(score * 100, 2.0)
 
     g_col1, g_col2, g_col3 = st.columns(3)
     with g_col1:
@@ -800,13 +981,10 @@ if st.session_state.analysis is not None:
         lbl = item["label"]
 
         if direction == "risk":
-            bar_color = "#DC2626"
             sign_icon = "▲ Elevates Risk"
         elif direction == "protective":
-            bar_color = "#16A34A"
             sign_icon = "▼ Protective / Lowers Risk"
         else:
-            bar_color = "#64748B"
             sign_icon = "• Neutral"
 
         col_lbl, col_val, col_bar = st.columns([2.5, 1.8, 3.5])
@@ -835,14 +1013,14 @@ if st.session_state.analysis is not None:
     # 6. Hospital-Grade PDF Clinical Report Generation
     st.markdown("---")
     st.markdown("#### 📄 Executive Hospital-Grade PDF Clinical Report")
-    st.caption("Includes official hospital branding, XAI SHAP factor breakdown, USPSTF citations, and SHA-256 verification seal.")
+    st.caption("Official clinical documentation with XAI SHAP factor breakdown, USPSTF citations, and SHA-256 integrity seal.")
 
     if PDF_GENERATOR_OK:
         pdf_col1, pdf_col2 = st.columns([2, 2])
 
         with pdf_col1:
             if st.button("📑 Generate Official PDF Clinical Report", type="primary", use_container_width=True, key="build_pdf_btn"):
-                with st.spinner("Rendering vector clinical PDF report..."):
+                with st.spinner("Rendering vector clinical PDF report in memory..."):
                     try:
                         pdf_bytes = generate_clinical_report(
                             patient=patient,
@@ -886,14 +1064,14 @@ if st.session_state.analysis is not None:
 
 
 # ================================================================
-# CLINICAL FOOTER & DISCLAIMER
+# CLINICAL FOOTER & REGULATORY DISCLAIMER
 # ================================================================
 st.markdown("---")
 st.markdown("""
 <div style="color:#64748B; font-size:12px; line-height:1.5;">
     <b>Clinical Advisory & Regulatory Disclaimer:</b> LungCancer.NET is an investigational clinical decision support system
     developed for population pre-screening and early risk stratification. It computes statistical risk from a 9-predictor ensemble
-    calibrated on CDC BRFSS epidemiological cohorts. It does not replace tissue biopsy or radiological evaluation.
-    All triage actions must be confirmed by a licensed medical practitioner.
+    calibrated on CDC BRFSS epidemiological cohorts. All patient data is ephemeral and never written to disk or logs.
+    It does not replace tissue biopsy or radiological evaluation. All triage actions must be confirmed by a licensed medical practitioner.
 </div>
 """, unsafe_allow_html=True)

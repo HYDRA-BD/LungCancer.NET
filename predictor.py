@@ -95,18 +95,37 @@ class ClinicalPredictor:
         Calculates unified risk score, triage tier, local SHAP attribution,
         and uncertainty bounds for a single patient profile.
         """
-        age = float(patient_data.get("age", 50))
-        bmi = float(patient_data.get("bmi", 25.0))
-        pack_years = float(patient_data.get("pack_years", 0.0))
-        resp_burden = int(patient_data.get("resp_burden", 0))
-        chronic_burden = int(patient_data.get("chronic_burden", 0))
-        aqi_5yr = patient_data.get("aqi_5yr")
-        pm25_5yr = patient_data.get("pm25_5yr")
-        low_access = bool(patient_data.get("low_access", False))
-        sex = int(patient_data.get("sex", 1))  # 1=Male, 2=Female
+        try:
+            age = max(18.0, min(float(patient_data.get("age", 50)), 120.0))
+        except (TypeError, ValueError):
+            age = 50.0
 
-        effective_aqi = float(aqi_5yr) if aqi_5yr is not None else POPULATION_BASELINES["aqi_5yr"]
-        effective_pm25 = float(pm25_5yr) if pm25_5yr is not None else POPULATION_BASELINES["pm25_5yr"]
+        try:
+            bmi = max(10.0, min(float(patient_data.get("bmi", 25.0)), 90.0))
+        except (TypeError, ValueError):
+            bmi = 25.0
+
+        try:
+            pack_years = max(0.0, min(float(patient_data.get("pack_years", 0.0)), 250.0))
+        except (TypeError, ValueError):
+            pack_years = 0.0
+
+        resp_burden = 1 if patient_data.get("resp_burden") else 0
+        chronic_burden = 1 if patient_data.get("chronic_burden") else 0
+        low_access = bool(patient_data.get("low_access", False))
+        sex = 2 if patient_data.get("sex") == 2 else 1
+
+        aqi_raw = patient_data.get("aqi_5yr")
+        pm25_raw = patient_data.get("pm25_5yr")
+        try:
+            effective_aqi = max(0.0, min(float(aqi_raw), 500.0)) if aqi_raw is not None else POPULATION_BASELINES["aqi_5yr"]
+        except (TypeError, ValueError):
+            effective_aqi = POPULATION_BASELINES["aqi_5yr"]
+
+        try:
+            effective_pm25 = max(0.0, min(float(pm25_raw), 500.0)) if pm25_raw is not None else POPULATION_BASELINES["pm25_5yr"]
+        except (TypeError, ValueError):
+            effective_pm25 = POPULATION_BASELINES["pm25_5yr"]
 
         # -------------------------------------------------------------
         # 1. Base Multi-Predictor Log-Odds Modeling (Calibrated Ensemble)

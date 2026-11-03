@@ -435,16 +435,16 @@ def generate_clinical_report(
     buf = io.BytesIO()
     doc = _ClinicalDoc(buf, team=team_info, logo_path=logo_path, watermark_path=watermark_path)
 
-    # Compute SHA-256 hash for document integrity
-    raw_hash_seed = f"{patient.get('patient_id')}:{risk_score:.6f}:{datetime.now().isoformat()}"
+    patient_id_display = str(patient.get("patient_id", "—")).strip()
+    if is_deidentified:
+        pseudo = hashlib.sha256(patient_id_display.encode("utf-8")).hexdigest()[:6].upper()
+        patient_id_display = f"ANON-{pseudo}"
+
+    # Compute SHA-256 hash for document integrity using safe display identifier
+    raw_hash_seed = f"{patient_id_display}:{risk_score:.6f}:{datetime.now().isoformat()}"
     report_hash = hashlib.sha256(raw_hash_seed.encode("utf-8")).hexdigest()
 
     story: list = []
-
-    # Title & Metadata
-    patient_id_display = patient.get("patient_id", "—")
-    if is_deidentified:
-        patient_id_display = f"ANON-{hashlib.md5(patient_id_display.encode()).hexdigest()[:6].upper()}"
 
     sec_status = "DE-IDENTIFIED (HIPAA PRIVACY MODE)" if is_deidentified else "CONFIDENTIAL PATIENT RECORD"
 
