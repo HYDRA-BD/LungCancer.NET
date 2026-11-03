@@ -1,0 +1,19 @@
+{
+  "policy": {
+    "t_out": 0.0002369308211426204,
+    "t_in": 0.006264793051605955,
+    "unc_cutoff": 0.6327796145707056
+  },
+  "policy_detail": {
+    "t_out": 0.0002369308211426204,
+    "t_in": 0.006264793051605955,
+    "t_cost_optimal": 0.006264793051605955,
+    "rule_out_binding_constraint": "subgroup_floor",
+    "capacity_binding": false,
+    "min_loss": 19704.0,
+    "loss_if_refer_none": 28000.0,
+    "loss_if_refer_all": 352483.0,
+    "odds_ratio_to_deploy_prevalence": 1.0,
+    "n_eligible_subgroups_in_guard": 17
+  }
+}

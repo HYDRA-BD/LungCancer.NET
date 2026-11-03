@@ -1,0 +1,42 @@
+﻿# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+# Large raw data
+LLCP2024.csv
+LLCP2023.csv
+LLCP202*.XPT
+# All trained model artifacts
+*.pkl
+*.joblib
+*.npy
+xgb/training/*.pkl
+cat/training/*.pkl
+lgb/training/*.pkl
+meta_out/*.pkl
+meta_out/base_fold_models/*.pkl
+# Large prediction dumps (regenerable from models)
+meta_out/oof_predictions.csv
+meta_out/meta_shap/*.csv
+external_validation_LLCP2023/*.csv
+external_validation_LLCP2023/*.pkl
+external_shap_LLCP2023/**/*.csv
+specialist_out/triage_decisions.csv
+specialist_out/triage_audit.csv
+# Vector store (rebuild with: python rag.py --ingest)
+artifacts/chroma/
+artifacts/aqi_5yr_cache.json
+artifacts/aqi_errors.json
+# Caches and logs
+*.log
+.cache/
+orchestrator_logs/
+shap_logs/
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup of old git repo (never commit).git_broken_backup/
