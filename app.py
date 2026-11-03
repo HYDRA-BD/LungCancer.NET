@@ -1,19 +1,19 @@
 """
-app.py — LungCancer.NET Secured Clinical Pre-Screening Dashboard.
+app.py — LungCancer.NET Clinical Pre-Screening & Risk Stratification Portal.
 
-Design & Architectural Features:
-  • Accessible Medical Interface Designed for Older Adults (Ages 45–80)
-  • Base font >= 18px, high contrast (WCAG 2.1 AA compliant), touch targets >= 48px
-  • Hopeful, compassionate healthcare aesthetics (marine blues, warm cyan, gentle amber)
-  • Cryptographic Authentication & RBAC using PBKDF2-HMAC-SHA256 (250,000 iterations)
-  • Role-Based Access Control ('Clinician' full access vs 'Auditor' read-only)
-  • Zero sample credentials exposed on login/signup forms
-  • Ephemeral patient data handling with HIPAA Privacy Shield (SHA-256 masking)
-  • 4-Step Linear Intake Stepper for lower cognitive burden
-  • Calibrated Multi-Predictor Ensemble Scoring with Equity-Aware Floor
+Key Features & Architectural Standards:
+  • Professional Clinical Design System (Deep Clinical Blue #1E3A8A, Warm Teal #0D9488, Soft Gold #D97706)
+  • Robust Typography with Google Font 'Inter' (Body >= 16px, Critical Clinical Values >= 32px)
+  • Mandatory Word-Wrap & Flex Rules (overflow-wrap: break-word, word-break: break-word, min-width: 0)
+  • Native Dark/Light Mode Theme Detection via st.context.theme with zero white-flash contrast bugs
+  • Centered Professional Authentication Gateway with PBKDF2-HMAC-SHA256 (Zero hardcoded credentials)
+  • Role-Based Access Control ('Clinician' full access vs 'Auditor' read-only mode)
+  • Ephemeral Patient Data with HIPAA Privacy Shield (One-way SHA-256 masking)
+  • Linear 4-Step Intake Stepper for lower cognitive burden
+  • Calibrated Multi-Predictor Ensemble Scoring with Equity-Aware Sensitivity Floor
   • Explainable AI (SHAP Waterfall Decomposition)
-  • Local Semantic Guideline RAG (USPSTF) & On-Device Clinical Narrative
-  • Hospital-Grade Vector PDF Generation with Integrity Seal
+  • Local Semantic Guideline RAG (USPSTF) & On-Device Clinical Pulmonology Narrative
+  • Hospital-Grade Vector PDF Report Generation with SHA-256 Seal
 """
 from __future__ import annotations
 
@@ -109,6 +109,27 @@ US_STATES = {
 
 
 # ================================================================
+# DYNAMIC THEME DETECTION (STREAMLIT >= 1.35 st.context.theme)
+# ================================================================
+def detect_dark_mode() -> bool:
+    """Detects whether dark mode is currently active via st.context.theme."""
+    try:
+        theme = getattr(st.context, "theme", {})
+        if isinstance(theme, dict):
+            val = theme.get("base") or theme.get("type")
+        else:
+            val = getattr(theme, "base", None) or getattr(theme, "type", None)
+        if val and str(val).lower() == "dark":
+            return True
+    except Exception:
+        pass
+    return False
+
+IS_DARK = detect_dark_mode()
+print(f"[LungCancer.NET] Context theme base detected: {'DARK' if IS_DARK else 'LIGHT'}")
+
+
+# ================================================================
 # SESSION STATE INITIALIZATION
 # ================================================================
 st.session_state.setdefault("authenticated", False)
@@ -130,297 +151,353 @@ if "aqi_cache" not in st.session_state:
 
 
 # ================================================================
-# ACCESSIBLE HIGH-CONTRAST CSS INJECTION (WCAG 2.1 AA)
+# CLINICAL DESIGN SYSTEM CSS (WITH OVERFLOW & THEME HANDLING)
 # ================================================================
-st.markdown("""
-<style>
-    /* ----------------------------------------------------
-       GLOBAL TYPOGRAPHY & READABILITY SCALE (Base >= 18px)
-       ---------------------------------------------------- */
-    html, body, [class*="css"], .stMarkdown, p, div, label, span {
-        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-        font-size: 18px;
-        line-height: 1.6;
-        color: #0F172A;
-    }
+theme_css_overrides = """
+:root {
+    --card-bg: #1E293B !important;
+    --card-border: #334155 !important;
+    --text-main: #F8FAFC !important;
+    --text-muted: #94A3B8 !important;
+    --app-bg: #0F172A !important;
+    --input-bg: #0F172A !important;
+    --hero-refer-bg: #450A0A !important;
+    --hero-review-bg: #451A03 !important;
+    --hero-ruleout-bg: #064E3B !important;
+}
+""" if IS_DARK else """
+:root {
+    --card-bg: #FFFFFF !important;
+    --card-border: #E2E8F0 !important;
+    --text-main: #0F172A !important;
+    --text-muted: #64748B !important;
+    --app-bg: #F8FAFC !important;
+    --input-bg: #FFFFFF !important;
+    --hero-refer-bg: #FEF2F2 !important;
+    --hero-review-bg: #FFFBEB !important;
+    --hero-ruleout-bg: #ECFDF5 !important;
+}
+"""
 
-    h1, .stHeading h1 {
-        font-size: 32px !important;
+st.markdown(f"""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    {theme_css_overrides}
+
+    /* ----------------------------------------------------
+       GLOBAL BOX-SIZING & OVERFLOW PREVENTION (NON-NEGOTIABLE)
+       ---------------------------------------------------- */
+    * {{
+        box-sizing: border-box !important;
+    }}
+
+    html, body, [class*="css"], .stMarkdown, p, div, label, span {{
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--text-main);
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }}
+
+    /* Prevent container overflow on flex / columns when window is 50% width */
+    [data-testid="column"], .stColumn, [data-testid="stHorizontalBlock"] > div {{
+        min-width: 0 !important;
+        flex: 1 1 0px !important;
+    }}
+
+    h1, .stHeading h1 {{
+        font-size: 28px !important;
         font-weight: 800 !important;
-        color: #0B2545 !important;
+        color: var(--text-main) !important;
         letter-spacing: -0.5px;
         margin-bottom: 8px !important;
-    }
+        overflow-wrap: break-word !important;
+    }}
 
-    h2, .stHeading h2 {
-        font-size: 26px !important;
+    h2, .stHeading h2 {{
+        font-size: 22px !important;
         font-weight: 700 !important;
-        color: #0F2942 !important;
-        margin-top: 20px !important;
+        color: var(--text-main) !important;
+        margin-top: 16px !important;
         margin-bottom: 8px !important;
-    }
+        overflow-wrap: break-word !important;
+    }}
 
-    h3, .stHeading h3 {
-        font-size: 21px !important;
+    h3, .stHeading h3 {{
+        font-size: 18px !important;
         font-weight: 700 !important;
-        color: #1E3A5F !important;
-    }
+        color: var(--text-main) !important;
+        overflow-wrap: break-word !important;
+    }}
 
     /* ----------------------------------------------------
-       TOUCH TARGETS & FORM CONTROLS (>= 48px hit area)
+       BUTTON HIERARCHY & TOUCH TARGETS (>= 48px)
        ---------------------------------------------------- */
-    button, .stButton > button {
-        min-height: 50px !important;
-        font-size: 18px !important;
+    button, .stButton > button {{
+        min-height: 48px !important;
+        font-size: 16px !important;
         font-weight: 600 !important;
-        border-radius: 10px !important;
-        padding: 12px 24px !important;
+        border-radius: 8px !important;
+        padding: 12px 20px !important;
         margin: 6px 0 !important;
         transition: all 0.18s ease-in-out !important;
-        border: 1px solid #CBD5E1 !important;
-    }
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }}
 
-    .stButton > button:hover {
+    /* Primary solid button */
+    .stButton > button[kind="primary"] {{
+        background-color: #1E3A8A !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25) !important;
+    }}
+    .stButton > button[kind="primary"]:hover {{
+        background-color: #172554 !important;
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    }
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.35) !important;
+    }}
+
+    /* Secondary outline button */
+    .stButton > button[kind="secondary"] {{
+        background-color: transparent !important;
+        color: var(--text-main) !important;
+        border: 1px solid var(--card-border) !important;
+    }}
+    .stButton > button[kind="secondary"]:hover {{
+        background-color: rgba(30, 58, 138, 0.08) !important;
+        border-color: #1E3A8A !important;
+    }}
 
     /* Inputs: text, number, select */
     div[data-baseweb="input"] > div,
-    div[data-baseweb="select"] > div {
-        min-height: 50px !important;
-        border-radius: 8px !important;
-        border-color: #CBD5E1 !important;
-        font-size: 18px !important;
-    }
-
-    div[data-baseweb="input"] input {
-        font-size: 18px !important;
-        font-weight: 500 !important;
-        color: #0F172A !important;
-    }
-
-    /* Streamlit tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 12px !important;
-        border-bottom: 2px solid #E2E8F0 !important;
-    }
-
-    .stTabs [data-baseweb="tab"] {
+    div[data-baseweb="select"] > div {{
         min-height: 48px !important;
-        font-size: 18px !important;
+        border-radius: 8px !important;
+        border-color: var(--card-border) !important;
+        background-color: var(--input-bg) !important;
+        font-size: 16px !important;
+    }}
+
+    div[data-baseweb="input"] input {{
+        font-size: 16px !important;
+        color: var(--text-main) !important;
+    }}
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 8px !important;
+        border-bottom: 2px solid var(--card-border) !important;
+    }}
+
+    .stTabs [data-baseweb="tab"] {{
+        min-height: 48px !important;
+        font-size: 16px !important;
         font-weight: 600 !important;
-        padding: 10px 20px !important;
+        padding: 10px 18px !important;
         border-radius: 8px 8px 0 0 !important;
-    }
+        color: var(--text-muted) !important;
+    }}
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+        color: #1E3A8A !important;
+        border-bottom: 2px solid #1E3A8A !important;
+    }}
 
     /* ----------------------------------------------------
-       ACCESSIBLE DESIGN SYSTEM COMPONENTS
+       CLINICAL CARDS & SURFACES (24px PADDING)
        ---------------------------------------------------- */
-    /* Executive Top Navigation Header */
-    .clinical-header {
-        background: linear-gradient(135deg, #0B2545 0%, #134074 55%, #0284C7 100%);
+    .login-container {{
+        background-color: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        padding: 32px 28px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        margin: 20px auto 40px auto;
+        max-width: 480px;
+    }}
+
+    .clinical-header-bar {{
+        background: linear-gradient(135deg, #1E3A8A 0%, #172554 60%, #0D9488 100%);
         color: #FFFFFF !important;
-        padding: 22px 28px;
+        padding: 24px 28px;
         border-radius: 12px;
         margin-bottom: 24px;
-        box-shadow: 0 4px 14px rgba(11, 37, 69, 0.16);
+        box-shadow: 0 4px 14px rgba(30, 58, 138, 0.18);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 16px;
-    }
-    .clinical-header h1 {
+    }}
+    .clinical-header-bar h1 {{
         color: #FFFFFF !important;
         margin: 0 !important;
         padding: 0 !important;
-        font-size: 26px !important;
-    }
-    .clinical-header p {
+        font-size: 24px !important;
+    }}
+    .clinical-header-bar p {{
         color: #E2E8F0 !important;
         margin: 4px 0 0 0 !important;
-        font-size: 16px !important;
-    }
+        font-size: 15px !important;
+    }}
 
-    /* User Profile Pill */
-    .user-profile-pill {
+    .user-pill-tag {{
         background: rgba(255, 255, 255, 0.16);
         border: 1px solid rgba(255, 255, 255, 0.35);
-        padding: 8px 16px;
-        border-radius: 30px;
-        font-size: 16px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 14px;
         font-weight: 600;
         color: #FFFFFF !important;
         display: inline-flex;
         align-items: center;
-        gap: 10px;
-    }
+        gap: 8px;
+    }}
 
-    /* Badges */
-    .badge-clinician {
+    .badge-clinician-tag {{
         background-color: #059669;
         color: #FFFFFF;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 14px;
+        padding: 3px 8px;
+        border-radius: 14px;
+        font-size: 12px;
         font-weight: 700;
-        letter-spacing: 0.3px;
-    }
-    .badge-auditor {
+    }}
+    .badge-auditor-tag {{
         background-color: #D97706;
         color: #FFFFFF;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 14px;
+        padding: 3px 8px;
+        border-radius: 14px;
+        font-size: 12px;
         font-weight: 700;
-        letter-spacing: 0.3px;
-    }
+    }}
 
-    /* Notice for Auditor */
-    .banner-auditor {
-        background-color: #FFFBEB;
-        border: 2px solid #F59E0B;
+    .auditor-banner-box {{
+        background-color: var(--card-bg);
+        border: 2px solid #D97706;
         border-left: 8px solid #D97706;
-        color: #92400E;
-        padding: 16px 20px;
+        color: var(--text-main);
+        padding: 20px 24px;
         border-radius: 8px;
         margin-bottom: 24px;
-        font-size: 18px;
-        line-height: 1.5;
-    }
-
-    /* Stepper Number Pill */
-    .step-pill {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: #0284C7;
-        color: white;
-        font-weight: 700;
-        margin-right: 8px;
         font-size: 16px;
-    }
+    }}
 
     /* Triage Hero Card */
-    .triage-hero-card {
+    .triage-hero-box {{
         border-radius: 12px;
-        padding: 26px 30px;
+        padding: 24px;
         margin-bottom: 24px;
         border: 2px solid transparent;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    }
-    .triage-hero-refer {
-        background-color: #FEF2F2;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }}
+    .hero-refer {{
+        background-color: var(--hero-refer-bg);
         border-color: #DC2626;
         border-left: 10px solid #DC2626;
-    }
-    .triage-hero-review {
-        background-color: #FFFBEB;
+    }}
+    .hero-review {{
+        background-color: var(--hero-review-bg);
         border-color: #D97706;
         border-left: 10px solid #D97706;
-    }
-    .triage-hero-ruleout {
-        background-color: #ECFDF5;
+    }}
+    .hero-ruleout {{
+        background-color: var(--hero-ruleout-bg);
         border-color: #059669;
         border-left: 10px solid #059669;
-    }
+    }}
 
-    .triage-tier-badge {
+    .tier-badge-pill {{
         display: inline-block;
-        padding: 6px 16px;
-        border-radius: 24px;
-        font-size: 16px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 14px;
         font-weight: 800;
         letter-spacing: 0.5px;
-        color: white;
-    }
+        color: #FFFFFF;
+    }}
 
-    .metric-callout-card {
-        background: #FFFFFF;
-        border: 1px solid #CBD5E1;
-        border-radius: 10px;
-        padding: 18px 20px;
-        text-align: center;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-    }
-    .metric-callout-card .value {
-        font-size: 30px;
-        font-weight: 800;
-        line-height: 1.2;
-        color: #0F2942;
-        margin: 6px 0;
-    }
-    .metric-callout-card .label {
-        font-size: 16px;
-        font-weight: 600;
-        color: #475569;
-    }
+    .triage-score-display {{
+        font-size: 32px !important;
+        font-weight: 800 !important;
+        line-height: 1.15 !important;
+    }}
 
-    /* SHAP Attribution Bars */
-    .shap-row {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .shap-badge-risk {
-        background: #FEE2E2;
-        color: #B91C1C;
-        border: 1px solid #FCA5A5;
-        font-size: 14px;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: 14px;
-    }
-    .shap-badge-protect {
-        background: #DCFCE7;
-        color: #15803D;
-        border: 1px solid #86EFAC;
-        font-size: 14px;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: 14px;
-    }
-    .shap-badge-neutral {
-        background: #F1F5F9;
-        color: #475569;
-        border: 1px solid #CBD5E1;
-        font-size: 14px;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: 14px;
-    }
-
-    /* Guideline Excerpt Blockquote */
-    .guideline-quote {
-        background-color: #F8FAFC;
-        border-left: 6px solid #0284C7;
-        padding: 16px 20px;
-        border-radius: 0 8px 8px 0;
-        margin: 12px 0;
-        font-size: 17px;
-        line-height: 1.6;
-        color: #1E293B;
-    }
-
-    /* AI Narrative Block */
-    .ai-narrative-card {
-        background: #F0F9FF;
-        border: 1.5px solid #BAE6FD;
+    .clinical-metric-card {{
+        background-color: var(--card-bg);
+        border: 1px solid var(--card-border);
         border-radius: 10px;
         padding: 20px 24px;
-        color: #0369A1;
-        font-size: 18px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }}
+    .clinical-metric-card .value {{
+        font-size: 26px;
+        font-weight: 800;
+        margin: 6px 0;
+    }}
+    .clinical-metric-card .label {{
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-muted);
+    }}
+
+    /* SHAP Attribution Rows */
+    .shap-item-row {{
+        background-color: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 8px;
+    }}
+    .shap-badge-elevate {{
+        background: #FEE2E2;
+        color: #B91C1C;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }}
+    .shap-badge-protect {{
+        background: #DCFCE7;
+        color: #15803D;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }}
+    .shap-badge-neutral {{
+        background: #F1F5F9;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }}
+
+    /* Guideline Quote Box */
+    .guideline-quote-card {{
+        background-color: var(--card-bg);
+        border-left: 6px solid #1E3A8A;
+        border-top: 1px solid var(--card-border);
+        border-right: 1px solid var(--card-border);
+        border-bottom: 1px solid var(--card-border);
+        padding: 20px 24px;
+        border-radius: 0 8px 8px 0;
+        margin: 12px 0;
+        font-size: 16px;
+        line-height: 1.6;
+    }}
+
+    .ai-summary-box {{
+        background-color: var(--card-bg);
+        border: 1.5px solid #0D9488;
+        border-radius: 10px;
+        padding: 20px 24px;
+        font-size: 16px;
         line-height: 1.65;
-    }
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -489,10 +566,7 @@ def check_ollama():
 
 
 def generate_clinical_summary(input_data: dict, tier: str, rec: str, state_name: str) -> str:
-    """
-    Generates an on-device clinical narrative summary.
-    Strictly zero PII sent: only non-identifying aggregate biomarkers are supplied.
-    """
+    """Generates an on-device clinical narrative summary without external PII leakage."""
     age = int(input_data.get("AGE", 50))
     pkyrs = float(input_data.get("PACK_YEARS", 0.0))
     resp = "Present" if input_data.get("RESP_BURDEN") else "Absent"
@@ -500,7 +574,7 @@ def generate_clinical_summary(input_data: dict, tier: str, rec: str, state_name:
     aqi_val = input_data.get("AQI_5YR", "unknown")
 
     fallback_text = (
-        f"Clinical Evaluation: Individual presents with an estimated cumulative tobacco exposure of "
+        f"Clinical Evaluation: Patient presents with an estimated cumulative tobacco exposure of "
         f"{pkyrs:.1f} pack-years and documented respiratory burden status ({resp}). In conjunction with 5-year "
         f"ambient particulate exposure (AQI {aqi_val}) in {state_name}, the composite ensemble stratifies this case "
         f"into the '{tier}' category. Protocol recommendation: {rec}"
@@ -574,28 +648,28 @@ def get_aqi_badge(aqi: float | None) -> tuple[str, str]:
 # CLINICAL PERSONA PRESETS (FOR RAPID EVALUATION)
 # ================================================================
 PERSONAS = {
-    "🔴 High-Risk Heavy Smoker": {
+    "🔴 High-Risk Smoker": {
         "pid": "P-98421", "age": 66, "sex": "Male", "state": "Ohio",
         "unit": "Imperial (lbs, ft/in)", "w_lbs": 195.0, "h_ft": 5, "h_in": 10,
         "packs": 1.5, "years": 32.0, "asthma": False, "copd": True,
         "heart_attack": False, "chd": True, "stroke": False, "diabetes": True,
         "low_access": False,
     },
-    "🟢 Low-Risk Young Non-Smoker": {
+    "🟢 Low-Risk Young": {
         "pid": "P-10492", "age": 29, "sex": "Female", "state": "Maine",
         "unit": "Metric (kg, cm)", "w_kg": 62.0, "h_cm": 168.0,
         "packs": 0.0, "years": 0.0, "asthma": False, "copd": False,
         "heart_attack": False, "chd": False, "stroke": False, "diabetes": False,
         "low_access": False,
     },
-    "🟡 Intermediate / Borderline Review": {
+    "🟡 Borderline Review": {
         "pid": "P-44819", "age": 53, "sex": "Female", "state": "California",
         "unit": "Imperial (lbs, ft/in)", "w_lbs": 160.0, "h_ft": 5, "h_in": 5,
         "packs": 1.0, "years": 14.0, "asthma": True, "copd": False,
         "heart_attack": False, "chd": False, "stroke": False, "diabetes": False,
         "low_access": False,
     },
-    "🛡️ Vulnerable Subgroup (Equity Floor)": {
+    "🛡️ Subgroup Equity": {
         "pid": "P-73012", "age": 58, "sex": "Male", "state": "West Virginia",
         "unit": "Imperial (lbs, ft/in)", "w_lbs": 210.0, "h_ft": 5, "h_in": 9,
         "packs": 1.0, "years": 22.0, "asthma": False, "copd": False,
@@ -634,29 +708,33 @@ def load_persona(p_name: str):
 
 
 # ================================================================
-# SECURE AUTHENTICATION GATEWAY
-# (NO SAMPLE CREDENTIALS EXPOSED ON SCREEN)
+# CENTERED AUTHENTICATION GATEWAY
+# (PROFESSIONAL CLINICAL PORTAL CARD)
 # ================================================================
 if not st.session_state.authenticated:
-    auth_col1, auth_col2, auth_col3 = st.columns([1, 2.2, 1])
+    _, auth_center_col, _ = st.columns([1, 1.8, 1])
 
-    with auth_col2:
+    with auth_center_col:
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        if os.path.exists(LOGO_PATH):
-            st.image(LOGO_PATH, width=110)
+        st.markdown("""
+        <div class="login-container">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="margin: 0; font-size: 26px; color: #1E3A8A;">🫁 LungCancer.NET</h1>
+                <p style="margin: 6px 0 0 0; color: #64748B; font-size: 14px; font-weight: 500;">
+                    Clinical Pre-Screening & Risk Stratification Portal
+                </p>
+                <div style="height: 1px; background-color: var(--card-border); margin: 16px 0;"></div>
+            </div>
+        """, unsafe_allow_html=True)
 
-        st.markdown("## 🫁 LungCancer.NET")
-        st.markdown("### Clinical AI Pre-Screening & Triage Portal")
-        st.caption("Secure cryptographic sign-in required for clinical decision support access.")
+        auth_tab_login, auth_tab_signup = st.tabs(["🔑 Sign In", "📝 Create Account"])
 
-        tab_login, tab_register = st.tabs(["🔑 Sign In", "📝 Create Account"])
-
-        with tab_login:
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        with auth_tab_login:
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
             login_user = st.text_input(
                 "Username or Clinical Email",
                 key="login_user_field",
-                placeholder="Enter your registered username or email",
+                placeholder="Enter registered username or email",
             ).strip()
             login_pass = st.text_input(
                 "Password",
@@ -665,7 +743,7 @@ if not st.session_state.authenticated:
                 placeholder="Enter your password",
             )
 
-            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
             if st.button("Sign In to Clinical Portal", type="primary", use_container_width=True, key="login_submit_btn"):
                 success, role, name, msg = authenticate_user(login_user, login_pass)
                 if success:
@@ -674,26 +752,31 @@ if not st.session_state.authenticated:
                     st.session_state.auth_role = role
                     st.session_state.auth_name = name
                     log_audit_event("AUTH_LOGIN", f"User '{login_user}' authenticated as {role}")
-                    st.success(f"Welcome back, {name}!")
+                    st.success(f"Welcome, {name}!")
                     time.sleep(0.3)
                     st.rerun()
                 else:
                     st.error(msg)
 
-            # Inform user if system has zero registered accounts yet
             if get_user_count() == 0:
-                st.info("ℹ️ No accounts detected in the local database. Click **Create Account** above or run `python create_user.py` to create your initial clinical account.")
+                st.info("ℹ️ No registered accounts in local database. Click **Create Account** above or run `python create_user.py` to set up your credentials.")
 
-        with tab_register:
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-            reg_name = st.text_input("Full Clinical Name", placeholder="e.g. Dr. Sarah Lin, MD", key="reg_name_input")
-            reg_user = st.text_input("Choose Username or Email", placeholder="e.g. slin_md", key="reg_user_input")
-            reg_role = st.selectbox("Select Account Role", ["Clinician", "Auditor"], index=0, key="reg_role_select", help="Clinicians have full intake and assessment privileges. Auditors have read-only inspection access.")
-            reg_pass1 = st.text_input("Password (minimum 8 characters)", type="password", key="reg_pass1_input")
+        with auth_tab_signup:
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+            reg_name = st.text_input("Full Clinical Name", placeholder="e.g. Dr. Jane Smith, MD", key="reg_name_input")
+            reg_user = st.text_input("Username or Email", placeholder="e.g. jsmith_md", key="reg_user_input")
+            reg_role = st.selectbox(
+                "Account Role",
+                ["Clinician", "Auditor"],
+                index=0,
+                key="reg_role_select",
+                help="Clinicians have full intake and assessment privileges. Auditors have read-only inspection access.",
+            )
+            reg_pass1 = st.text_input("Password (min 8 characters)", type="password", key="reg_pass1_input")
             reg_pass2 = st.text_input("Confirm Password", type="password", key="reg_pass2_input")
 
-            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-            if st.button("Register & Activate Clinical Account", use_container_width=True, key="reg_submit_btn"):
+            st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+            if st.button("Register & Activate Account", type="primary", use_container_width=True, key="reg_submit_btn"):
                 if reg_pass1 != reg_pass2:
                     st.error("Passwords do not match. Please verify and re-enter.")
                 else:
@@ -708,6 +791,8 @@ if not st.session_state.authenticated:
                     else:
                         st.error(reg_msg)
 
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.stop()
 
 
@@ -719,11 +804,11 @@ is_auditor = (st.session_state.auth_role == "Auditor")
 
 
 # ================================================================
-# SIDEBAR — USER SESSION & EPHEMERAL AUDIT CONTROLS
+# SIDEBAR — USER PROFILE & SECURITY GUARDS
 # ================================================================
 with st.sidebar:
     if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=120)
+        st.image(LOGO_PATH, width=110)
     st.markdown("### 🫁 LungCancer.NET")
     st.caption("AI Decision Support & Equity Guardrail")
 
@@ -733,9 +818,9 @@ with st.sidebar:
     st.markdown(f"**Username:** `{st.session_state.auth_user}`")
 
     if is_clinician:
-        st.markdown('**Role:** <span class="badge-clinician">Clinician (Full Access)</span>', unsafe_allow_html=True)
+        st.markdown('**Role:** <span class="badge-clinician-tag">Clinician (Full Access)</span>', unsafe_allow_html=True)
     else:
-        st.markdown('**Role:** <span class="badge-auditor">Auditor (Read-Only)</span>', unsafe_allow_html=True)
+        st.markdown('**Role:** <span class="badge-auditor-tag">Auditor (Read-Only)</span>', unsafe_allow_html=True)
 
     st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
     if st.button("🚪 Sign Out (Clear Session)", use_container_width=True, key="logout_btn_sidebar"):
@@ -776,7 +861,7 @@ with st.sidebar:
     if ollama_up:
         st.markdown('🟢 **Ollama Local AI:** Online (`qwen2.5:3b`)')
     else:
-        st.markdown('🟡 **Ollama Local AI:** Fallback Engine Active')
+        st.markdown('🟡 **Ollama Local AI:** Deterministic Fallback')
 
     if RAG_OK:
         st.markdown('🟢 **USPSTF RAG:** Ready (ChromaDB)')
@@ -809,21 +894,21 @@ with st.sidebar:
 # ================================================================
 # CLINICAL HEADER BAR
 # ================================================================
-role_label_html = (
-    '<span class="badge-clinician">Clinician</span>' if is_clinician
-    else '<span class="badge-auditor">Auditor</span>'
+role_badge_html = (
+    '<span class="badge-clinician-tag">Clinician</span>' if is_clinician
+    else '<span class="badge-auditor-tag">Auditor</span>'
 )
 
 st.markdown(f"""
-<div class="clinical-header">
+<div class="clinical-header-bar">
     <div>
         <h1>🫁 LungCancer.NET</h1>
         <p>Assistive Clinical Decision Support & Population Triage System · AI Builders Congress 2026</p>
     </div>
     <div>
-        <div class="user-profile-pill">
+        <div class="user-pill-tag">
             <span>👤 {st.session_state.auth_name}</span>
-            {role_label_html}
+            {role_badge_html}
         </div>
     </div>
 </div>
@@ -832,7 +917,7 @@ st.markdown(f"""
 # Auditor Read-Only Notification Banner
 if is_auditor:
     st.markdown("""
-    <div class="banner-auditor">
+    <div class="auditor-banner-box">
         <b>🛡️ AUDITOR READ-ONLY MODE ACTIVE:</b> You are logged in with quality audit privileges.
         Patient intake fields and pre-screening execution buttons are locked to preserve audit integrity.
         You can inspect calibrated risk calculations, verify local SHAP attribution factors, review USPSTF guidelines, and inspect PDF reports.
@@ -844,31 +929,31 @@ if is_auditor:
 # 1-CLICK FAST-EVALUATION PERSONAS
 # ================================================================
 st.markdown("### ⚡ Fast-Evaluation Clinical Personas")
-st.caption("Quickly load validated patient profiles to evaluate model behavior across risk strata and equity subgroups.")
+st.caption("Load validated benchmark patient profiles across risk strata and equity subgroups.")
 
 pcol1, pcol2, pcol3, pcol4 = st.columns(4)
 
 with pcol1:
-    if st.button("🔴 High-Risk Smoker", disabled=is_auditor, use_container_width=True, help="Age 66, 32 yr heavy smoking, COPD comorbidity, Ohio"):
-        load_persona("🔴 High-Risk Heavy Smoker")
+    if st.button("🔴 High-Risk Smoker", disabled=is_auditor, use_container_width=True, help="Age 66, 32 yr heavy smoking, COPD comorbidity, Ohio", key="btn_p1"):
+        load_persona("🔴 High-Risk Smoker")
         st.rerun()
     st.caption("66yo · 48 pk-yr · COPD")
 
 with pcol2:
-    if st.button("🟢 Low-Risk Young", disabled=is_auditor, use_container_width=True, help="Age 29, non-smoker, healthy, Maine"):
-        load_persona("🟢 Low-Risk Young Non-Smoker")
+    if st.button("🟢 Low-Risk Young", disabled=is_auditor, use_container_width=True, help="Age 29, non-smoker, healthy, Maine", key="btn_p2"):
+        load_persona("🟢 Low-Risk Young")
         st.rerun()
     st.caption("29yo · 0 pk-yr · Healthy")
 
 with pcol3:
-    if st.button("🟡 Borderline Review", disabled=is_auditor, use_container_width=True, help="Age 53, 14 pk-yr, Asthma, California"):
-        load_persona("🟡 Intermediate / Borderline Review")
+    if st.button("🟡 Borderline Review", disabled=is_auditor, use_container_width=True, help="Age 53, 14 pk-yr, Asthma, California", key="btn_p3"):
+        load_persona("🟡 Borderline Review")
         st.rerun()
     st.caption("53yo · 14 pk-yr · Asthma")
 
 with pcol4:
-    if st.button("🛡️ Subgroup Equity", disabled=is_auditor, use_container_width=True, help="Age 58, 22 pk-yr, rural access barriers, West Virginia"):
-        load_persona("🛡️ Vulnerable Subgroup (Equity Floor Active)")
+    if st.button("🛡️ Subgroup Equity", disabled=is_auditor, use_container_width=True, help="Age 58, 22 pk-yr, rural access barriers, West Virginia", key="btn_p4"):
+        load_persona("🛡️ Subgroup Equity")
         st.rerun()
     st.caption("58yo · Rural · Cost Barrier")
 
@@ -878,7 +963,7 @@ st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 # ================================================================
 # LINEAR 4-STEP INTAKE STEPPER
 # ================================================================
-st.markdown("### 📋 Patient Intake & Biomarkers")
+st.markdown("### 📋 Patient Intake & Clinical Indicators")
 
 step1_tab, step2_tab, step3_tab, step4_tab = st.tabs([
     "1️⃣ Demographics & Location",
@@ -1064,7 +1149,7 @@ with step4_tab:
         key="low_access",
     )
     if low_access:
-        st.markdown('<span style="color:#0284C7; font-weight:700;">🛡️ Access-Aware Multiplier Engaged — Missed-Case Penalty Weighted Up by 1.5x</span>', unsafe_allow_html=True)
+        st.markdown('<span style="color:#0D9488; font-weight:700;">🛡️ Access-Aware Multiplier Engaged — Missed-Case Penalty Weighted Up by 1.5x</span>', unsafe_allow_html=True)
 
 st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
@@ -1173,84 +1258,84 @@ if st.session_state.analysis is not None:
 
     # Determine Tier Visual Tokens (Color + Icon + Label)
     if tier == "REFER":
-        hero_class = "triage-hero-refer"
+        hero_class = "hero-refer"
         tier_icon = "🚩"
         badge_bg = "#DC2626"
-        tier_title = "REFERRAL RECOMMENDED (LDCT Imaging Indicated)"
+        tier_title = "REFERRAL RECOMMENDED · High Probability"
     elif tier == "REVIEW":
-        hero_class = "triage-hero-review"
+        hero_class = "hero-review"
         tier_icon = "🔍"
         badge_bg = "#D97706"
-        tier_title = "CLINICAL REVIEW REQUIRED (Shared Decision-Making)"
+        tier_title = "CLINICAL REVIEW REQUIRED · Shared Decision-Making"
     else:
-        hero_class = "triage-hero-ruleout"
+        hero_class = "hero-ruleout"
         tier_icon = "🛡️"
         badge_bg = "#059669"
-        tier_title = "RULE-OUT / ROUTINE ANNUAL SURVEILLANCE"
+        tier_title = "RULE-OUT · Low Probability Routine Annual Screening"
 
-    # Main Hero Result Card
+    # Main Hero Result Card (Padding 24px, 32px score)
     st.markdown(f"""
-    <div class="triage-hero-card {hero_class}">
+    <div class="triage-hero-box {hero_class}">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
-            <div style="flex: 2; min-width: 300px;">
-                <span class="triage-tier-badge" style="background-color: {badge_bg};">
+            <div style="flex: 2; min-width: 280px;">
+                <span class="tier-badge-pill" style="background-color: {badge_bg};">
                     {tier_icon} TIER: {tier}
                 </span>
-                <h2 style="margin: 12px 0 6px 0; color: #0F172A; font-weight: 800;">{tier_title}</h2>
-                <p style="margin: 0; font-size: 19px; font-weight: 600; color: #1E293B;">
-                    <b>Recommended Action Plan:</b> {p['recommendation']}
+                <h2 style="margin: 12px 0 6px 0; font-weight: 800; font-size: 22px;">{tier_title}</h2>
+                <p style="margin: 0; font-size: 17px; font-weight: 600;">
+                    <b>Action Plan:</b> {p['recommendation']}
                 </p>
-                <div style="margin-top: 10px; font-size: 15px; color: #475569;">
-                    Patient ID: <b>{pid_shown}</b> · Location: <b>{patient['state']}</b> · Evaluation Timestamp: <b>{ans['timestamp']}</b>
+                <div style="margin-top: 10px; font-size: 14px; opacity: 0.85;">
+                    Record ID: <b>{pid_shown}</b> · Location: <b>{patient['state']}</b> · Evaluation: <b>{ans['timestamp']}</b>
                 </div>
             </div>
-            <div style="text-align: right; min-width: 200px;">
-                <div style="font-size: 14px; font-weight: 700; color: #475569; letter-spacing: 0.5px;">ESTIMATED RISK SCORE</div>
-                <div style="font-size: 38px; font-weight: 800; color: {badge_bg}; line-height: 1.1;">{score * 100:.2f}%</div>
-                <div style="font-size: 15px; color: #475569; margin-top: 4px;">95% CI: [{p['ci_lower']*100:.2f}% – {p['ci_upper']*100:.2f}%]</div>
+            <div style="text-align: right; min-width: 180px;">
+                <div style="font-size: 13px; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">ESTIMATED RISK SCORE</div>
+                <div class="triage-score-display" style="color: {badge_bg};">{score * 100:.2f}%</div>
+                <div style="font-size: 14px; opacity: 0.85; margin-top: 4px;">95% CI: [{p['ci_lower']*100:.2f}% – {p['ci_upper']*100:.2f}%]</div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Calibrated Triage Boundaries
+    # Calibrated Triage Boundaries (3-Card Metric Deck)
     st.markdown("#### 📐 Calibrated Triage Cutoffs")
     b_col1, b_col2, b_col3 = st.columns(3)
     with b_col1:
         st.markdown(f"""
-        <div class="metric-callout-card">
+        <div class="clinical-metric-card">
             <div class="label">Rule-Out Ceiling (t_out)</div>
             <div class="value" style="color: #059669;">{p['t_out']*100:.4f}%</div>
-            <div style="font-size: 14px; color: #64748B;">Equity-Protected Clearance Cutoff</div>
+            <div style="font-size: 13px; opacity: 0.8;">Equity-Protected Clearance Cutoff</div>
         </div>
         """, unsafe_allow_html=True)
     with b_col2:
         st.markdown(f"""
-        <div class="metric-callout-card">
+        <div class="clinical-metric-card">
             <div class="label">Patient Risk Score</div>
             <div class="value" style="color: {badge_bg};">{score*100:.4f}%</div>
-            <div style="font-size: 14px; color: #64748B;">Multi-Model Unified Estimate</div>
+            <div style="font-size: 13px; opacity: 0.8;">Multi-Model Unified Estimate</div>
         </div>
         """, unsafe_allow_html=True)
     with b_col3:
         st.markdown(f"""
-        <div class="metric-callout-card">
+        <div class="clinical-metric-card">
             <div class="label">Referral Floor (t_in)</div>
             <div class="value" style="color: #DC2626;">{p['t_in']*100:.4f}%</div>
-            <div style="font-size: 14px; color: #64748B;">LDCT Imaging Threshold</div>
+            <div style="font-size: 13px; opacity: 0.8;">LDCT Imaging Threshold</div>
         </div>
         """, unsafe_allow_html=True)
 
     if p.get("equity_guard_triggered"):
         st.markdown("""
-        <div style="background-color: #FEF3C7; border-left: 6px solid #D97706; padding: 14px 18px; border-radius: 6px; margin: 16px 0;">
+        <div style="background-color: var(--card-bg); border-left: 6px solid #D97706; border: 1px solid var(--card-border); padding: 16px 20px; border-radius: 6px; margin: 16px 0;">
             <b>🛡️ Equity Guardrail Engaged:</b> Risk score was below referral threshold, but rule-out was prevented due to model uncertainty or structural access barriers. Tier adjusted to <b>REVIEW</b> to avoid missed clinical triage.
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
-    # Collapsible Detail Sections
+    # Collapsible Detail Drawers
     with st.expander("🔬 Explainable AI: SHAP Factor Attribution Waterfall", expanded=True):
         st.caption("Decomposition of patient biomarkers relative to the CDC BRFSS normative screening cohort.")
         shap_items = p.get("shap_items", [])
@@ -1261,7 +1346,7 @@ if st.session_state.analysis is not None:
             lbl = item["label"]
 
             if direction == "risk":
-                badge_html = '<span class="shap-badge-risk">▲ Elevates Risk</span>'
+                badge_html = '<span class="shap-badge-elevate">▲ Elevates Risk</span>'
             elif direction == "protective":
                 badge_html = '<span class="shap-badge-protect">▼ Lowers Risk</span>'
             else:
@@ -1280,7 +1365,7 @@ if st.session_state.analysis is not None:
             for idx, g in enumerate(ans["guidelines"], 1):
                 st.markdown(f"**Guideline Evidence Citation #{idx} (Page {g.get('page', '?')}):**")
                 st.markdown(f"""
-                <div class="guideline-quote">
+                <div class="guideline-quote-card">
                     "{g.get('text', '')}"
                 </div>
                 """, unsafe_allow_html=True)
@@ -1289,7 +1374,7 @@ if st.session_state.analysis is not None:
 
     with st.expander("🤖 Pulmonologist AI Narrative Summary", expanded=False):
         st.markdown(f"""
-        <div class="ai-narrative-card">
+        <div class="ai-summary-box">
             <b>Clinical Narrative:</b><br/>
             {ans.get("ai_narrative", "")}
         </div>
@@ -1352,7 +1437,7 @@ if st.session_state.analysis is not None:
 st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("""
-<div style="color: #475569; font-size: 15px; line-height: 1.6;">
+<div style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
     <b>Clinical Advisory & Regulatory Disclaimer:</b> LungCancer.NET is an investigational clinical decision support system
     developed for population pre-screening and early risk stratification. It computes statistical risk from a 9-predictor ensemble
     calibrated on CDC BRFSS epidemiological cohorts. All patient data is ephemeral and never written to disk or logs.
