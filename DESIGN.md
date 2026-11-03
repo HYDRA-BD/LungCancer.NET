@@ -1,96 +1,90 @@
-# LungCancer.NET — Locked Clinical Design System Specification
+# LungCancer.NET — Clinical Design System & Screen Specifications
 
-## 1. Design File & Figma Integration
-- **Figma File Name**: `LungCancer.NET -- Clinical Design System`
-- **Figma File Key**: `TuoSnymWvrUvvh29IHqHfx`
-- **Live Figma URL**: [https://www.figma.com/design/TuoSnymWvrUvvh29IHqHfx](https://www.figma.com/design/TuoSnymWvrUvvh29IHqHfx)
-- **Active Frame Deliverable**: `00-design-system` (Node ID: `3:3`)
-
----
-
-## 2. Brand Feel & Emotional Tone
-- **Clinical but Warm**: Designed to evoke a trusted family physician's consultation room rather than an alarm-inducing emergency triage display.
-- **Older Adult Legibility (Ages 45–80)**: Every label, button, and value is legible without pinch-to-zoom.
-- **Hopeful Triage Framing**: Even high-probability `REFER` findings are framed empathetically ("we detected this early and have an immediate diagnostic path"), mitigating screening anxiety.
+## 1. Live Figma Architecture & Deliverables
+- **Figma File**: [**LungCancer.NET — Clinical Design System**](https://www.figma.com/design/TuoSnymWvrUvvh29IHqHfx)
+- **Design System Frame**: [`00-design-system` (Node 3:3)](https://www.figma.com/design/TuoSnymWvrUvvh29IHqHfx?node-id=3-3&autoplay-code-preview=3-3)
+- **Full Screen Specifications**: [`01-login` through `05-pdf` (Node 11:3)](https://www.figma.com/design/TuoSnymWvrUvvh29IHqHfx?node-id=11-3&autoplay-code-preview=11-3)
 
 ---
 
-## 3. Colour System (Locked Hex Codes)
+## 2. Locked Design System Tokens (From 00-design-system)
 
-| Token Name | Hex Code | Role & Meaning |
-|---|---|---|
-| **Primary (deep clinical blue)** | `#1E3A8A` | Foundation of trust, primary buttons, major headers |
-| **Primary hover** | `#1E40AF` | Focused and pressed interaction states |
-| **Accent (warm teal, hope)** | `#0D9488` | Care, clinical guidance, hope, positive progress |
-| **Accent soft** | `#14B8A6` | Subtle accents, secondary highlights |
-| **Success / RULE-OUT** | `#15803D` | Routine annual surveillance clearance |
-| **Warning / REVIEW** | `#B45309` | Shared clinical decision-making & monitoring |
-| **Alert / REFER** | `#B91C1C` | Diagnostic LDCT referral (controlled, non-neon) |
-| **Background (light)** | `#FAFAF7` | Warm, calming light canvas |
-| **Surface (light, cards)** | `#FFFFFF` | Form cards, hero containers |
-| **Text primary (light)** | `#0F172A` | High-contrast body copy & headings |
-| **Text secondary (light)** | `#475569` | Helper copy, timestamps |
-| **Border (light)** | `#E2E8F0` | Card borders, dividers |
-| **Background (dark)** | `#0F172A` | Deep slate canvas (never pure black) |
-| **Surface (dark, cards)** | `#1E293B` | Elevated card surfaces |
-| **Text primary (dark)** | `#F1F5F9` | Crisp dark-mode body copy |
-| **Text secondary (dark)** | `#94A3B8` | Muted dark-mode secondary copy |
-| **Border (dark)** | `#334155` | Subtle dark-mode card outlines |
+### Colour System
+- **Primary Clinical Blue**: `#1E3A8A` | **Primary Hover**: `#1E40AF`
+- **Warm Teal (Hope)**: `#0D9488` | **Accent Soft**: `#14B8A6`
+- **Success / RULE-OUT**: `#15803D`
+- **Warning / REVIEW**: `#B45309`
+- **Alert / REFER**: `#B91C1C` *(clinical terracotta, never neon)*
+- **Light Surfaces**: Canvas `#FAFAF7`, Cards `#FFFFFF`, Text `#0F172A`, Secondary `#475569`, Border `#E2E8F0`
+- **Dark Surfaces**: Canvas `#0F172A`, Cards `#1E293B`, Text `#F1F5F9`, Secondary `#94A3B8`, Border `#334155`
 
----
+### Typography Hierarchy (Inter & JetBrains Mono)
+- **Display / H1**: `32px` / 700 / `-0.02em` (Inter)
+- **H2**: `24px` / 600 (Inter)
+- **H3**: `20px` / 600 (Inter)
+- **Body**: `18px` / 400 / `1.6` line-height (Inter) — *never smaller than 15px*
+- **Small / Caption**: `15px` / 400 (Inter)
+- **Clinical Value**: `40px` / 700 (JetBrains Mono Bold) — *never smaller than 24px*
+- **Micro-Label**: `13px` / 500 / `UPPERCASE` / `0.08em` letterspacing
 
-## 4. Typography Scale & Hierarchy
-
-| Role | Font Family | Size | Weight | Line-Height / Spacing |
-|---|---|---|---|---|
-| **Display / H1** | Inter | `32px` | 700 (Bold) | `-0.02em` letterspacing |
-| **H2** | Inter | `24px` | 600 (Semibold) | `1.3` line-height |
-| **H3** | Inter | `20px` | 600 (Semibold) | `1.35` line-height |
-| **Body** | Inter | `18px` | 400 (Regular) | `1.6` line-height |
-| **Small / Caption** | Inter | `15px` | 400 (Regular) | `1.5` line-height |
-| **Clinical Value** | JetBrains Mono | `40px` | 700 (Bold) | `1.1` line-height |
-| **Micro-Label** | Inter | `13px` | 500 (Medium) | `UPPERCASE` / `0.08em` letterspacing |
-
-*Hard Rules:*
-- Body text is **never** smaller than 15px.
-- Clinical readouts are **never** smaller than 24px (standardized to 40px for hero values).
-- All text containers strictly enforce `overflow-wrap: break-word` and `min-width: 0`.
+### Spacing & Elevation
+- **Base Grid**: `8px` (`4px`, `8px`, `12px`, `16px`, `24px`, `32px`, `48px`, `64px`)
+- **Card Padding**: `24px` | **Section Gap**: `32px` | **Form Gap**: `16px`
+- **Border Radii**: Cards `12px`, Buttons `8px`, Inputs `8px`, Tier Badges `999px`
+- **Elevations**:
+  - Elevation 1 (Card default): `0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)`
+  - Elevation 2 (Card elevated): `0 4px 12px rgba(15,23,42,0.08)`
 
 ---
 
-## 5. Spacing System (8px Base Grid) & Radii
+## 3. Screen Specifications (Side-by-Side Light & Dark)
 
-- **Grid Increments**: `4px`, `8px`, `12px`, `16px`, `24px`, `32px`, `48px`, `64px`
-- **Card Internal Padding**: `24px`
-- **Section Gap**: `32px`
-- **Form Field Vertical Gap**: `16px`
-- **Button Padding**: `14px × 24px` (minimum `48px` touch target)
-- **Border Radii**:
-  - Cards: `12px`
-  - Buttons: `8px`
-  - Inputs: `8px`
-  - Tier Badges: `999px` (full pill)
+### `01-login` — Clinician & Auditor Authentication Gateway
+- **Layout**: Centered card (~420px wide) with 24px padding.
+- **Header**: Wordmark `🫁 LungCancer.NET` (H1: 32px / 700 / -0.02em) with subtitle `Clinical AI Pre-Screening & Triage Portal`.
+- **Form Controls**:
+  - Username or Clinical Email field (48px height, 8px radius, micro-label: 13px uppercase).
+  - Password field (48px height, 8px radius).
+  - Primary "Sign in to Clinical Portal" button (full width, 48px height, `#1E3A8A`).
+  - Text link: "Create an account" (Teal `#0D9488` / `#14B8A6`).
+- **Security & Privacy**: Zero sample credentials or demo usernames exposed on screen. Subtle security watermark footer.
 
----
+### `02-signup` — Clinical Account Registration
+- **Layout**: Centered card (~420px wide) with 24px padding.
+- **Fields**:
+  - Full Clinical Name (`Dr. Sarah Lin, MD`)
+  - Clinical Email or Username (`slin_md@hospital.org`)
+  - Role Assignment (`Clinician` vs `Auditor`)
+  - Password (min 8 characters) with text-only hint: *"Must contain at least 8 characters with a mix of letters and numbers."*
+  - Confirm Password
+- **Actions**: Primary "Create account" button (48px height) and "Back to sign in" link.
 
-## 6. Shadows & Elevation
+### `03-intake` — Clinical Data Entry Stepper
+- **Stepper Header**: 4-step linear flow with numbered bubble nodes:
+  `1. Demographics` → `2. Inhalation` → `3. Comorbidities` → `4. Access & Equity`
+- **Progress Track**: 6px progress bar with `#0D9488` teal fill.
+- **Step 1 Card**: Patient Age (18–100), Biological Sex, and Location with 5-year historical AQI/PM2.5 auto-display.
+- **Step 2 Card**: Average packs per day, total years smoked, and a prominent visual pack-years readout (`48.0 PK-YRS` in JetBrains Mono 40px bold) with USPSTF benchmark warning.
+- **Step 3 Card**: Comorbidities presented as large interactive checkbox tiles (`COPD`, `Asthma`, `Coronary Heart Disease`, `Diabetes`).
+- **Step 4 Card**: Healthcare Access & Equity Safeguards toggle tile.
+- **Action Bar**: Persistent "Continue" button (`#1E3A8A`, 48px height).
 
-- **Elevation 1 (Card default)**: `0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)`
-- **Elevation 2 (Card elevated)**: `0 4px 12px rgba(15,23,42,0.08)`
-- Zero glowing or saturated colored shadows.
+### `04-results` — Clinical Triage & Explainable AI Dashboard
+- **Hero Triage Card**:
+  - REFER tier card in terracotta (`#B91C1C` border, light tint `#FEF2F2`, dark tint `#450A0A`).
+  - Tier pill: `🚩 TIER: REFER` (999px radius).
+  - Risk score: `24.87%` in JetBrains Mono 40px bold.
+  - 95% Confidence Interval: `95% CI: [21.40% – 28.34%]`.
+  - Action plan: `Action Plan: Immediate Low-Dose CT (LDCT) thoracic imaging order indicated.`
+- **3 Structured Sections**:
+  1. *Why This Result*: Real-time SHAP factor attribution horizontal bars (+0.12 smoking, +0.08 age, +0.06 COPD).
+  2. *Clinical Evidence*: Matched USPSTF guideline citation with blue accent quote bar.
+  3. *AI Summary*: On-device pulmonology narrative summary card.
+- **Fixed Bottom Action Bar**: "Download Official PDF Report" (Primary 48px) and "New Patient Pre-Screening" (Secondary outline).
 
----
-
-## 7. Deliverable #1: Frame `00-design-system` Structure
-
-The `00-design-system` frame has been constructed side-by-side in Light and Dark variants:
-1. **Colour Swatches**: All 16 semantic and background tokens labeled with hex codes and roles.
-2. **Typography Samples**: Full scale from 13px micro-label up to 40px JetBrains Mono clinical values.
-3. **Button Variants**: Primary, Secondary, Ghost, and Disabled with $\ge 48\text{px}$ touch targets.
-4. **Input Field States**: Default, Focused (active ring), Error (red border), and Disabled.
-5. **Card Variants**: Default (elevation 1), Elevated (elevation 2), and Accent Header card.
-6. **Tier Badges**:
-   - 🚩 `REFERRAL RECOMMENDED · High Probability` (Terracotta `#B91C1C` + Flag icon)
-   - 🔍 `CLINICAL REVIEW REQUIRED · Shared Decision-Making` (Warm Amber `#B45309` + Magnifier icon)
-   - 🛡️ `RULE-OUT · Low Probability Routine Annual Screening` (Sage Green `#15803D` + Shield icon)
-7. **Spacing Ruler**: Visual representation of the 8px baseline grid (`4px` through `64px`).
+### `05-pdf` — Hospital-Grade Vector Clinical PDF Preview
+- **Document Layout**: Single-page clinical documentation mockup (~800px width).
+- **Navy Header**: Deep navy bar (`#0B2545`) with logo, institution name, Report ID, and date.
+- **Demographics Table**: Clean tabular summary of de-identified patient record, age, sex, 5-yr AQI, BMI, and comorbidities.
+- **Tier Banner**: Colored risk band with LDCT clinical order instructions.
+- **Signature Block**: Physician orders checklist, attending pulmonologist signature line, license details, and SHA-256 cryptographic seal.
