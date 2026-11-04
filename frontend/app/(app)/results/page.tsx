@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnalyzeResponse, getCurrentUser, User } from "@/lib/api";
+import { fmt } from "@/lib/format";
 import { TierBadge } from "@/components/ui/tier-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,24 +56,31 @@ export default function ResultsPage() {
 
   const { prediction, guidelines, summary, aqi, patient } = analysis;
 
-  // Format risk score: handle 0-1 scale vs percentage
+  // ── Null-safe score formatting via fmt() ────────────────────────────────────
+  // Backend returns a 0-1 probability; display as percentage.
   const rawScore = prediction.risk_score;
-  const scorePercent =
-    rawScore <= 1 ? (rawScore * 100).toFixed(2) : rawScore.toFixed(2);
+  const scorePercent = fmt(
+    typeof rawScore === "number" && Number.isFinite(rawScore) && rawScore <= 1
+      ? rawScore * 100
+      : rawScore,
+    2
+  );
 
-  const ciLower =
-    prediction.ci_lower !== undefined
+  const ciLowerNum =
+    prediction.ci_lower !== undefined && prediction.ci_lower !== null
       ? prediction.ci_lower <= 1
-        ? (prediction.ci_lower * 100).toFixed(2)
-        : prediction.ci_lower.toFixed(2)
+        ? prediction.ci_lower * 100
+        : prediction.ci_lower
       : null;
+  const ciLower = ciLowerNum !== null ? fmt(ciLowerNum, 2) : null;
 
-  const ciUpper =
-    prediction.ci_upper !== undefined
+  const ciUpperNum =
+    prediction.ci_upper !== undefined && prediction.ci_upper !== null
       ? prediction.ci_upper <= 1
-        ? (prediction.ci_upper * 100).toFixed(2)
-        : prediction.ci_upper.toFixed(2)
+        ? prediction.ci_upper * 100
+        : prediction.ci_upper
       : null;
+  const ciUpper = ciUpperNum !== null ? fmt(ciUpperNum, 2) : null;
 
   const tierStyles = {
     REFER: {
@@ -92,9 +100,20 @@ export default function ResultsPage() {
   const currentStyle = tierStyles[prediction.tier] || tierStyles.REVIEW;
   const isClinician = currentUser?.role === "clinician";
 
+  // ── Derived arrays with ?? [] guards ─────────────────────────────────────
+  const shapItems = prediction.shap_items ?? [];
+  const contributingFactors = prediction.contributing_factors ?? [];
+  const matchedGuidelines = guidelines ?? [];
+
+  // Pre-compute max abs SHAP value for bar scaling
+  const maxAbsImpact = Math.max(
+    ...shapItems.map((i) => Math.abs(i.impact ?? i.contribution ?? 0)),
+    0.01
+  );
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8 pb-40">
-      {/* Header with Consistent Padding */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-border">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 text-micro font-semibold uppercase tracking-wider text-accent">
@@ -114,19 +133,19 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* HERO TRIAGE BANNER with 24px+ Padding */}
+      {/* HERO TRIAGE BANNER */}
       <div
         className={`rounded-card border-2 p-6 sm:p-8 space-y-8 shadow-elevation-2 transition-all ${currentStyle.bg}`}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-border/40">
           <TierBadge tier={prediction.tier} size="lg" />
-          {aqi && aqi.aqi_5yr !== null && (
+          {aqi && aqi.aqi_5yr !== null && aqi.aqi_5yr !== undefined && (
             <div className="text-caption font-mono text-muted-foreground">
               Regional AQI:{" "}
               <strong className="text-foreground">
-                {aqi.aqi_5yr.toFixed(1)}
+                {fmt(aqi.aqi_5yr, 1)}
               </strong>{" "}
-              (PM2.5: {aqi.pm25_5yr?.toFixed(1) ?? "N/A"} µg/m³)
+              (PM2.5: {fmt(aqi.pm25_5yr, 1)} µg/m³)
             </div>
           )}
         </div>
@@ -160,8 +179,8 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* SECTION 1: SHAP Factor Attribution with min 24px Padding */}
-      {prediction.shap_items && prediction.shap_items.length > 0 && (
+      {/* SECTION 1: SHAP Factor Attribution */}
+      {shapItems.length > 0 && (
         <div className="bg-card rounded-card border border-border shadow-elevation-1 dark:shadow-none p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4 pb-2 border-b border-border/40">
             <div className="flex items-center gap-2.5">
@@ -180,26 +199,29 @@ export default function ResultsPage() {
           </p>
 
           <div className="space-y-4 pt-2">
-            {prediction.shap_items.map((item, idx) => {
-              const contrib = item.contribution;
+            {shapItems.map((item, idx) => {
+              // Backend returns `impact`; fall back to `contribution` for
+              // any older cached sessions still in sessionStorage.
+              const contrib = item.impact ?? item.contribution ?? 0;
               const isPositive = contrib >= 0;
               const absVal = Math.abs(contrib);
-              const maxVal = Math.max(
-                ...prediction.shap_items.map((i) => Math.abs(i.contribution)),
-                0.01
+              const barWidth = Math.min(
+                Math.round((absVal / maxAbsImpact) * 100),
+                100
               );
-              const barWidth = Math.min(Math.round((absVal / maxVal) * 100), 100);
 
               return (
                 <div key={idx} className="space-y-2">
                   <div className="flex justify-between text-caption font-semibold gap-3">
-                    <span className="text-foreground break-words">{item.feature}</span>
+                    <span className="text-foreground break-words">
+                      {item.label ?? item.feature}
+                    </span>
                     <span
                       className={`font-mono font-bold shrink-0 ${
                         isPositive ? "text-destructive" : "text-accent"
                       }`}
                     >
-                      {isPositive ? `+${contrib.toFixed(3)}` : contrib.toFixed(3)}
+                      {isPositive ? `+${fmt(contrib, 3)}` : fmt(contrib, 3)}
                     </span>
                   </div>
                   <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
@@ -217,8 +239,39 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* SECTION 2: Matched Guidelines with 24px+ Padding */}
-      {guidelines && guidelines.length > 0 && (
+      {/* SECTION 1b: Contributing Factors (tuple format from backend) */}
+      {contributingFactors.length > 0 && (
+        <div className="bg-card rounded-card border border-border shadow-elevation-1 dark:shadow-none p-6 sm:p-8 space-y-4">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+            <Info className="w-5 h-5 text-primary" />
+            <h2 className="text-h3 font-semibold text-foreground break-words">
+              Contributing Risk Factors
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {contributingFactors.map(([kind, text], i) => {
+              const kindLower = (kind ?? "").toLowerCase();
+              const accent =
+                kindLower === "alert" || kindLower === "high"
+                  ? "border-destructive text-destructive"
+                  : kindLower === "warning" || kindLower === "medium"
+                  ? "border-amber-500 text-amber-700 dark:text-amber-400"
+                  : "border-accent text-accent";
+              return (
+                <div
+                  key={i}
+                  className={`pl-4 border-l-2 text-body ${accent}`}
+                >
+                  {text}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 2: Matched Guidelines */}
+      {matchedGuidelines.length > 0 && (
         <div className="bg-card rounded-card border border-border shadow-elevation-1 dark:shadow-none p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
             <BookOpen className="w-5 h-5 text-primary" />
@@ -228,7 +281,7 @@ export default function ResultsPage() {
           </div>
 
           <div className="space-y-4">
-            {guidelines.map((g, idx) => (
+            {matchedGuidelines.map((g, idx) => (
               <div
                 key={idx}
                 className="p-6 bg-secondary/70 border-l-4 border-primary rounded-r-card space-y-3"
@@ -250,7 +303,7 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* SECTION 3: Clinical Summary Card with 24px+ Padding */}
+      {/* SECTION 3: Clinical Summary */}
       {summary && (
         <div className="bg-card rounded-card border border-border shadow-elevation-1 dark:shadow-none p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
@@ -265,7 +318,7 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* FIXED BOTTOM ACTION BAR with Proper Breathing Room */}
+      {/* FIXED BOTTOM ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border p-4 sm:p-6 shadow-elevation-2 z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-caption text-muted-foreground hidden sm:block">
@@ -285,7 +338,7 @@ export default function ResultsPage() {
               </Button>
             </Link>
 
-            {/* Generate PDF: Visible ONLY if user.role === 'clinician' */}
+            {/* Generate PDF: visible ONLY for clinicians */}
             {isClinician && (
               <Link href="/report" className="flex-1 sm:flex-initial">
                 <Button className="w-full h-12 px-8 rounded-button text-body font-semibold bg-primary hover:bg-primary-hover text-primary-foreground shadow-sm flex items-center justify-center gap-2 focus:ring-2 focus:ring-ring focus:ring-offset-2">

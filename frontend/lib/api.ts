@@ -50,9 +50,16 @@ export interface PatientInputData {
 
 export interface ShapItem {
   feature: string;
-  value: number;
-  contribution: number;
+  label?: string;
+  raw_value?: number;
+  /** Primary SHAP contribution field returned by the backend */
+  impact: number;
   direction?: string;
+  shap_value?: number;
+  /** @deprecated alias kept for backwards compat - use impact */
+  contribution?: number;
+  /** @deprecated alias kept for backwards compat - use raw_value */
+  value?: number;
 }
 
 export interface PredictionData {
@@ -60,9 +67,12 @@ export interface PredictionData {
   risk_score: number;
   ci_lower: number;
   ci_upper: number;
+  t_out?: number;
+  t_in?: number;
   recommendation: string;
   shap_items: ShapItem[];
-  contributing_factors?: string[];
+  /** Backend returns tuples: [kind, text], e.g. ["warning", "Heavy smoker"] */
+  contributing_factors?: [string, string][];
 }
 
 export interface GuidelineItem {
