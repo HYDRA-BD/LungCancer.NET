@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -160,84 +160,108 @@ export default function IntakePage() {
     formData.heightIn,
   ]);
 
-  // Quick Persona Loaders
-  const loadPersona = (type: "high" | "moderate" | "low") => {
-    if (type === "high") {
-      setFormData((prev) => ({
-        ...prev,
-        age: 66,
-        sex: 1,
-        state: "Ohio",
-        unit: "imperial",
-        weightLbs: 192,
-        heightFt: 5,
-        heightIn: 10,
-        weightKg: 89.1,
-        heightCm: 180,
-        packsPerDay: 1.0,
-        yearsSmoked: 32,
-        packYears: 32,
-        copd: true,
-        asthma: false,
-        respBurden: true,
-        chd: true,
-        heartAttack: false,
-        diabetes: true,
-        stroke: false,
-        chronicBurden: true,
-        lowAccess: false,
-      }));
-    } else if (type === "moderate") {
-      setFormData((prev) => ({
-        ...prev,
-        age: 45,
-        sex: 2,
-        state: "Vermont",
-        unit: "metric",
-        weightKg: 73.5,
-        heightCm: 175,
-        weightLbs: 149,
-        heightFt: 5,
-        heightIn: 6,
-        packsPerDay: 0.5,
-        yearsSmoked: 10,
-        packYears: 5,
-        copd: false,
-        asthma: false,
-        respBurden: false,
-        chd: false,
-        heartAttack: false,
-        diabetes: false,
-        stroke: false,
-        chronicBurden: false,
-        lowAccess: false,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        age: 25,
-        sex: 2,
-        state: "Maine",
-        unit: "metric",
-        weightKg: 63.6,
-        heightCm: 170,
-        weightLbs: 128,
-        heightFt: 5,
-        heightIn: 4,
-        packsPerDay: 0,
-        yearsSmoked: 0,
-        packYears: 0,
-        copd: false,
-        asthma: false,
-        respBurden: false,
-        chd: false,
-        heartAttack: false,
-        diabetes: false,
-        stroke: false,
-        chronicBurden: false,
-        lowAccess: false,
-      }));
-    }
+  // Safe baseline — every field present so no stale state leaks through
+  const DEFAULT_FORM: IntakeFormData = {
+    age: 45,
+    sex: 1,
+    state: "Ohio",
+    unit: "metric",
+    weightKg: 70,
+    weightLbs: 154,
+    heightCm: 170,
+    heightFt: 5,
+    heightIn: 7,
+    packsPerDay: 0,
+    yearsSmoked: 0,
+    packYears: 0,
+    asthma: false,
+    copd: false,
+    respBurden: false,
+    heartAttack: false,
+    chd: false,
+    stroke: false,
+    diabetes: false,
+    chronicBurden: false,
+    lowAccess: false,
+  };
+
+  // Persona click handler: reset ALL fields to DEFAULT_FORM first,
+  // then overlay only the persona-specific values. Prevents stale state.
+  const applyPersona = (persona: Partial<IntakeFormData>) => {
+    setFormData({ ...DEFAULT_FORM, ...persona });
+    setCurrentStep(0);
+  };
+
+  const PERSONA_HIGH: Partial<IntakeFormData> = {
+    age: 66,
+    sex: 1,
+    state: "Ohio",
+    unit: "imperial",
+    weightLbs: 192,
+    heightFt: 5,
+    heightIn: 10,
+    weightKg: 89.1,
+    heightCm: 180,
+    packsPerDay: 1.0,
+    yearsSmoked: 32,
+    packYears: 32,
+    copd: true,
+    asthma: false,
+    respBurden: true,
+    chd: true,
+    heartAttack: false,
+    diabetes: true,
+    stroke: false,
+    chronicBurden: true,
+    lowAccess: false,
+  };
+
+  const PERSONA_MODERATE: Partial<IntakeFormData> = {
+    age: 45,
+    sex: 2,
+    state: "Vermont",
+    unit: "metric",
+    weightKg: 73.5,
+    heightCm: 175,
+    weightLbs: 149,
+    heightFt: 5,
+    heightIn: 6,
+    packsPerDay: 0.5,
+    yearsSmoked: 10,
+    packYears: 5,
+    copd: false,
+    asthma: false,
+    respBurden: false,
+    chd: false,
+    heartAttack: false,
+    diabetes: false,
+    stroke: false,
+    chronicBurden: false,
+    lowAccess: false,
+  };
+
+  const PERSONA_LOW: Partial<IntakeFormData> = {
+    age: 25,
+    sex: 2,
+    state: "Maine",
+    unit: "metric",
+    weightKg: 63.6,
+    heightCm: 170,
+    weightLbs: 128,
+    heightFt: 5,
+    heightIn: 4,
+    packsPerDay: 0,
+    yearsSmoked: 0,
+    packYears: 0,
+    copd: false,
+    asthma: false,
+    respBurden: false,
+    chd: false,
+    heartAttack: false,
+    diabetes: false,
+    stroke: false,
+    chronicBurden: false,
+    lowAccess: false,
   };
 
   // Validation
@@ -299,6 +323,8 @@ export default function IntakePage() {
       height_weight: heightWeightStr,
     };
 
+    console.log("[ANALYZE] Sending:", JSON.stringify(patientPayload, null, 2));
+
     try {
       const response = await analyze(patientPayload);
       if (typeof window !== "undefined") {
@@ -355,7 +381,7 @@ export default function IntakePage() {
             <button
               type="button"
               aria-label="Load High Risk Persona"
-              onClick={() => loadPersona("high")}
+              onClick={() => applyPersona(PERSONA_HIGH)}
               className="px-3.5 py-2 rounded-button text-caption font-semibold bg-red-500/10 text-red-700 border border-red-500/20 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
             >
               High Risk (Refer)
@@ -363,7 +389,7 @@ export default function IntakePage() {
             <button
               type="button"
               aria-label="Load Moderate Risk Persona"
-              onClick={() => loadPersona("moderate")}
+              onClick={() => applyPersona(PERSONA_MODERATE)}
               className="px-3.5 py-2 rounded-button text-caption font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
             >
               Moderate (Review)
@@ -371,7 +397,7 @@ export default function IntakePage() {
             <button
               type="button"
               aria-label="Load Low Risk Persona"
-              onClick={() => loadPersona("low")}
+              onClick={() => applyPersona(PERSONA_LOW)}
               className="px-3.5 py-2 rounded-button text-caption font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
             >
               Low Risk (Rule-Out)
@@ -904,7 +930,7 @@ function Step2Smoking({
           <input
             id="packs-per-day-range"
             type="range"
-            min={0.1}
+            min={0}
             max={4.0}
             step={0.1}
             value={formData.packsPerDay}
@@ -933,7 +959,7 @@ function Step2Smoking({
           <input
             id="years-smoked-range"
             type="range"
-            min={1}
+            min={0}
             max={60}
             value={formData.yearsSmoked}
             onChange={(e) => handleYearsChange(parseInt(e.target.value, 10))}
