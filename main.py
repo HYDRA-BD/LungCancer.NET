@@ -24,7 +24,20 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field
 
 from predictor import get_prediction
-from rag import search_guidelines
+import os
+_DISABLE_RAG = os.environ.get("DISABLE_RAG", "0") == "1"
+
+
+def search_guidelines(query, k=3):
+    """Lazy wrapper — loads rag.py only when called, and only if enabled."""
+    if _DISABLE_RAG:
+        return []
+    try:
+        from rag import search_guidelines as _rag
+        return _rag(query, k=k)
+    except Exception as e:
+        logger.warning(f"RAG unavailable: {e}")
+        return []
 from aqi_cache import _load_cache, get_state_aqi
 from report_generator import generate_clinical_report
 from auth import (
@@ -62,13 +75,6 @@ async def lifespan(app: FastAPI):
         logger.info(f"AQI cache: {len(_aqi_cache.get('states', {}))} states")
     except Exception as e:
         logger.warning(f"AQI cache load failed: {e}")
-    # Warm up the RAG model so first real request isn't slow
-    try:
-        search_guidelines("warmup", k=1)
-        logger.info("RAG model warmed up")
-    except Exception as e:
-        logger.warning(f"RAG warmup failed: {e}")
-    yield
 
 
 app = FastAPI(
