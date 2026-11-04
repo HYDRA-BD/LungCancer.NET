@@ -57,6 +57,9 @@ export default function IntakePage() {
       sessionStorage.removeItem("analysis");
       sessionStorage.removeItem("patient");
       sessionStorage.removeItem("patient_id");
+      sessionStorage.removeItem("pdf_blob");
+      sessionStorage.removeItem("pdf_url");
+      sessionStorage.removeItem("pdf_filename");
     }
   }, []);
 
@@ -266,8 +269,9 @@ export default function IntakePage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    const freshPatientId = `P-${Date.now().toString().slice(-5)}`;
     const patientPayload: PatientInputData = {
-      patient_id: "",
+      patient_id: freshPatientId,
       age: formData.age,
       bmi,
       pack_years: formData.packYears,
@@ -290,9 +294,18 @@ export default function IntakePage() {
     try {
       const response = await analyze(patientPayload);
       if (typeof window !== "undefined") {
+        sessionStorage.removeItem("analysis");
+        sessionStorage.removeItem("patient");
+        sessionStorage.removeItem("pdf_blob");
+        sessionStorage.removeItem("pdf_url");
+        sessionStorage.removeItem("pdf_filename");
+        sessionStorage.removeItem("patient_id");
+
         sessionStorage.setItem("analysis", JSON.stringify(response));
         sessionStorage.setItem("patient", JSON.stringify(response.patient));
-        const genPid = (response.patient as { patient_id?: string })?.patient_id || "";
+        const genPid =
+          (response.patient as { patient_id?: string })?.patient_id ||
+          freshPatientId;
         sessionStorage.setItem("patient_id", genPid);
       }
       router.push("/results");

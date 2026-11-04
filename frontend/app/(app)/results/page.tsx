@@ -1,12 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AnalyzeResponse, getCurrentUser, User } from "@/lib/api";
+import {
+  AnalyzeResponse,
+  getCurrentUser,
+  User,
+  generateReport,
+  PatientInputData,
+} from "@/lib/api";
 import { fmt } from "@/lib/format";
 import { TierBadge } from "@/components/ui/tier-badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   FileText,
   RotateCcw,
@@ -15,6 +22,7 @@ import {
   BookOpen,
   Info,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 
 export default function ResultsPage() {
@@ -22,6 +30,19 @@ export default function ResultsPage() {
   const [analysis, setAnalysis] = useState<AnalyzeResponse | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [, setPdfBlob] = useState<Blob | null>(null);
+
+  // blobUrlRef: revokes object URLs on unmount or before generating a new blob
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const rawAnalysis = sessionStorage.getItem("analysis");
@@ -70,7 +91,6 @@ export default function ResultsPage() {
     "PT-CURRENT";
 
   // ── Null-safe score formatting via fmt() ────────────────────────────────────
-  // Backend returns a 0-1 probability; display as percentage.
   const rawScore = prediction.risk_score;
   const scorePercent = fmt(
     typeof rawScore === "number" && Number.isFinite(rawScore) && rawScore <= 1
@@ -123,6 +143,39 @@ export default function ResultsPage() {
     ...shapItems.map((i) => Math.abs(i.impact ?? i.contribution ?? 0)),
     0.01
   );
+
+  // ── Generate fresh PDF handler ──────────────────────────────────────────
+  const handleGeneratePdf = async () => {
+    if (!analysis?.patient) return;
+    setIsGeneratingPdf(true);
+    try {
+      const patientPayload = analysis.patient as unknown as PatientInputData;
+      const pid = patientPayload.patient_id || patientId;
+
+      console.log("Generating report for:", pid);
+      const blob = await generateReport(patientPayload);
+      setPdfBlob(blob);
+
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+      blobUrlRef.current = URL.createObjectURL(blob);
+
+      const filename = `LungCancer_${pid}_${Date.now()}.pdf`;
+      const a = document.createElement("a");
+      a.href = blobUrlRef.current;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      toast.success(`Downloaded report for ${pid}`);
+    } catch {
+      toast.error("Failed to generate PDF report");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8 pb-40">
@@ -223,8 +276,6 @@ export default function ResultsPage() {
 
           <div className="space-y-4 pt-2">
             {shapItems.map((item, idx) => {
-              // Backend returns `impact`; fall back to `contribution` for
-              // any older cached sessions still in sessionStorage.
               const contrib = item.impact ?? item.contribution ?? 0;
               const isPositive = contrib >= 0;
               const absVal = Math.abs(contrib);
@@ -262,7 +313,7 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* SECTION 1b: Contributing Factors (tuple format from backend) */}
+      {/* SECTION 1b: Contributing Factors */}
       {contributingFactors.length > 0 && (
         <div className="bg-card rounded-card border border-border shadow-elevation-1 dark:shadow-none p-6 sm:p-8 space-y-4">
           <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
@@ -361,14 +412,26 @@ export default function ResultsPage() {
               </Button>
             </Link>
 
-            {/* Generate PDF: visible ONLY for clinicians */}
+            {/* Generate PDF: Visible ONLY for clinicians */}
             {isClinician && (
-              <Link href="/report" className="flex-1 sm:flex-initial">
-                <Button className="w-full h-12 px-8 rounded-button text-body font-semibold bg-primary hover:bg-primary-hover text-primary-foreground shadow-sm flex items-center justify-center gap-2 focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Generate PDF</span>
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                disabled={isGeneratingPdf}
+                onClick={handleGeneratePdf}
+                className="flex-1 sm:flex-initial h-12 px-8 rounded-button text-body font-semibold bg-primary hover:bg-primary-hover text-primary-foreground shadow-sm flex items-center justify-center gap-2 focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Generating PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-5 h-5" />
+                    <span>Generate PDF</span>
+                  </>
+                )}
+              </Button>
             )}
           </div>
         </div>

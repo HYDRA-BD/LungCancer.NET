@@ -20,9 +20,17 @@ export default function ReportPage() {
     "loading"
   );
   const [filename, setFilename] = useState("");
-  const [patientId, setPatientId] = useState("");
+  const [, setPatientId] = useState("");
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const downloadedRef = useRef(false);
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const rawPatient = sessionStorage.getItem("patient");
@@ -31,21 +39,22 @@ export default function ReportPage() {
       return;
     }
 
-    if (downloadedRef.current) return;
-    downloadedRef.current = true;
-
     async function processReport() {
       try {
         const patient: PatientInputData = JSON.parse(rawPatient!);
         const pid = patient.patient_id || "PATIENT";
         setPatientId(pid);
 
-        console.log("Generating report for:", patient.patient_id);
+        console.log("Generating report for:", pid);
         const pdfBlob = await generateReport(patient);
         const generatedFilename = `LungCancer_${pid}_${Date.now()}.pdf`;
         setFilename(generatedFilename);
 
+        if (blobUrlRef.current) {
+          URL.revokeObjectURL(blobUrlRef.current);
+        }
         const url = window.URL.createObjectURL(pdfBlob);
+        blobUrlRef.current = url;
         setBlobUrl(url);
 
         // Trigger auto-download
@@ -56,7 +65,7 @@ export default function ReportPage() {
         a.click();
         document.body.removeChild(a);
 
-        toast.success(`Report downloaded for ${patient.patient_id}`);
+        toast.success(`Downloaded report for ${pid}`);
         setStatus("started");
       } catch {
         setStatus("error");
