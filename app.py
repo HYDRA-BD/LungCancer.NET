@@ -721,22 +721,25 @@ def get_aqi_badge(aqi: float | None) -> tuple[str, str]:
 PERSONAS = {
     "🔴 High-Risk Smoker": {
         "pid": "P-98421", "age": 66, "sex": "Male", "state": "Ohio",
-        "unit": "Imperial (lbs, ft/in)", "w_lbs": 195.0, "h_ft": 5, "h_in": 10,
-        "packs": 1.5, "years": 32.0, "asthma": False, "copd": True,
+        "unit": "Imperial (lbs, ft/in)", "w_lbs": 192.0, "h_ft": 5, "h_in": 10,
+        "w_kg": 89.1, "h_cm": 180.0,
+        "packs": 1.0, "years": 32.0, "asthma": False, "copd": True,
         "heart_attack": False, "chd": True, "stroke": False, "diabetes": True,
         "low_access": False,
     },
     "🟢 Low-Risk Young": {
-        "pid": "P-10492", "age": 29, "sex": "Female", "state": "Maine",
-        "unit": "Metric (kg, cm)", "w_kg": 62.0, "h_cm": 168.0,
+        "pid": "P-10492", "age": 25, "sex": "Female", "state": "Maine",
+        "unit": "Metric (kg, cm)", "w_kg": 63.6, "h_cm": 170.0,
+        "w_lbs": 128.0, "h_ft": 5, "h_in": 4,
         "packs": 0.0, "years": 0.0, "asthma": False, "copd": False,
         "heart_attack": False, "chd": False, "stroke": False, "diabetes": False,
         "low_access": False,
     },
     "🟡 Borderline Review": {
-        "pid": "P-44819", "age": 53, "sex": "Female", "state": "California",
-        "unit": "Imperial (lbs, ft/in)", "w_lbs": 160.0, "h_ft": 5, "h_in": 5,
-        "packs": 1.0, "years": 14.0, "asthma": True, "copd": False,
+        "pid": "P-44819", "age": 45, "sex": "Female", "state": "Vermont",
+        "unit": "Metric (kg, cm)", "w_kg": 73.5, "h_cm": 175.0,
+        "w_lbs": 149.0, "h_ft": 5, "h_in": 6,
+        "packs": 0.5, "years": 10.0, "asthma": False, "copd": False,
         "heart_attack": False, "chd": False, "stroke": False, "diabetes": False,
         "low_access": False,
     },
@@ -1000,27 +1003,27 @@ if is_auditor:
 # 1-CLICK FAST-EVALUATION PERSONAS
 # ================================================================
 st.markdown("### ⚡ Fast-Evaluation Clinical Personas")
-st.caption("Load validated benchmark patient profiles across risk strata and equity subgroups.")
+st.caption("Each persona is tuned to demonstrate a different triage tier.")
 
 pcol1, pcol2, pcol3, pcol4 = st.columns(4)
 
 with pcol1:
-    if st.button("🔴 High-Risk Smoker", disabled=is_auditor, use_container_width=True, help="Age 66, 32 yr heavy smoking, COPD comorbidity, Ohio", key="btn_p1"):
+    if st.button("🔴 High-Risk Smoker", disabled=is_auditor, use_container_width=True, help="Age 66, 32 yr smoking, COPD comorbidity, Ohio", key="btn_p1"):
         load_persona("🔴 High-Risk Smoker")
         st.rerun()
-    st.caption("66yo · 48 pk-yr · COPD")
+    st.caption("66yo · 32 pk-yr · COPD (REFER)")
 
 with pcol2:
-    if st.button("🟢 Low-Risk Young", disabled=is_auditor, use_container_width=True, help="Age 29, non-smoker, healthy, Maine", key="btn_p2"):
+    if st.button("🟢 Low-Risk Young", disabled=is_auditor, use_container_width=True, help="Age 25, non-smoker, healthy, Maine", key="btn_p2"):
         load_persona("🟢 Low-Risk Young")
         st.rerun()
-    st.caption("29yo · 0 pk-yr · Healthy")
+    st.caption("25yo · 0 pk-yr · Healthy (RULE-OUT)")
 
 with pcol3:
-    if st.button("🟡 Borderline Review", disabled=is_auditor, use_container_width=True, help="Age 53, 14 pk-yr, Asthma, California", key="btn_p3"):
+    if st.button("🟡 Borderline Review", disabled=is_auditor, use_container_width=True, help="Age 45, 5 pk-yr, Vermont", key="btn_p3"):
         load_persona("🟡 Borderline Review")
         st.rerun()
-    st.caption("53yo · 14 pk-yr · Asthma")
+    st.caption("45yo · 5 pk-yr · Review (REVIEW)")
 
 with pcol4:
     if st.button("🛡️ Subgroup Equity", disabled=is_auditor, use_container_width=True, help="Age 58, 22 pk-yr, rural access barriers, West Virginia", key="btn_p4"):

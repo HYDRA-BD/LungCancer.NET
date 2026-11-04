@@ -65,17 +65,17 @@ export default function IntakePage() {
 
   // Single Form State Object across step navigation
   const [formData, setFormData] = useState<IntakeFormData>({
-        age: 66,
+    age: 66,
     sex: 1, // Male
     state: "Ohio",
     unit: "imperial",
-    weightKg: 72,
-    weightLbs: 165,
-    heightCm: 172,
+    weightKg: 89.1,
+    weightLbs: 192,
+    heightCm: 180,
     heightFt: 5,
-    heightIn: 8,
-    packsPerDay: 1.6,
-    yearsSmoked: 20,
+    heightIn: 10,
+    packsPerDay: 1.0,
+    yearsSmoked: 32,
     packYears: 32,
     copd: true,
     asthma: false,
@@ -83,9 +83,9 @@ export default function IntakePage() {
     chd: true,
     heartAttack: false,
     stroke: false,
-    diabetes: false,
+    diabetes: true,
     chronicBurden: true,
-    lowAccess: true,
+    lowAccess: false,
   });
 
   // Load States on mount
@@ -169,56 +169,64 @@ export default function IntakePage() {
         sex: 1,
         state: "Ohio",
         unit: "imperial",
-        weightLbs: 191,
+        weightLbs: 192,
         heightFt: 5,
         heightIn: 10,
-        packsPerDay: 1.6,
-        yearsSmoked: 20,
+        weightKg: 89.1,
+        heightCm: 180,
+        packsPerDay: 1.0,
+        yearsSmoked: 32,
         packYears: 32,
         copd: true,
         asthma: false,
         respBurden: true,
         chd: true,
         heartAttack: false,
-        diabetes: false,
+        diabetes: true,
         stroke: false,
         chronicBurden: true,
-        lowAccess: true,
+        lowAccess: false,
       }));
     } else if (type === "moderate") {
       setFormData((prev) => ({
         ...prev,
-        age: 58,
+        age: 45,
         sex: 2,
-        state: "West Virginia",
+        state: "Vermont",
         unit: "metric",
-        weightKg: 64,
-        heightCm: 162,
-        packsPerDay: 1.0,
-        yearsSmoked: 22,
-        packYears: 22,
+        weightKg: 73.5,
+        heightCm: 175,
+        weightLbs: 149,
+        heightFt: 5,
+        heightIn: 6,
+        packsPerDay: 0.5,
+        yearsSmoked: 10,
+        packYears: 5,
         copd: false,
-        asthma: true,
-        respBurden: true,
+        asthma: false,
+        respBurden: false,
         chd: false,
         heartAttack: false,
         diabetes: false,
         stroke: false,
         chronicBurden: false,
-        lowAccess: true,
+        lowAccess: false,
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        age: 42,
+        age: 25,
         sex: 2,
-        state: "California",
+        state: "Maine",
         unit: "metric",
-        weightKg: 60,
-        heightCm: 168,
-        packsPerDay: 0.5,
-        yearsSmoked: 10,
-        packYears: 5,
+        weightKg: 63.6,
+        heightCm: 170,
+        weightLbs: 128,
+        heightFt: 5,
+        heightIn: 4,
+        packsPerDay: 0,
+        yearsSmoked: 0,
+        packYears: 0,
         copd: false,
         asthma: false,
         respBurden: false,
@@ -339,34 +347,39 @@ export default function IntakePage() {
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-caption text-muted-foreground">
-            Quick Persona:
-          </span>
-          <button
-            type="button"
-            aria-label="Load High Risk Persona"
-            onClick={() => loadPersona("high")}
-            className="px-3.5 py-2 rounded-button text-caption font-semibold bg-red-500/10 text-red-700 border border-red-500/20 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            High Risk (Refer)
-          </button>
-          <button
-            type="button"
-            aria-label="Load Moderate Risk Persona"
-            onClick={() => loadPersona("moderate")}
-            className="px-3.5 py-2 rounded-button text-caption font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            Moderate (Review)
-          </button>
-          <button
-            type="button"
-            aria-label="Load Low Risk Persona"
-            onClick={() => loadPersona("low")}
-            className="px-3.5 py-2 rounded-button text-caption font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            Low Risk (Rule-Out)
-          </button>
+        <div className="flex flex-col items-start sm:items-end gap-1.5">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-caption text-muted-foreground">
+              Quick Persona:
+            </span>
+            <button
+              type="button"
+              aria-label="Load High Risk Persona"
+              onClick={() => loadPersona("high")}
+              className="px-3.5 py-2 rounded-button text-caption font-semibold bg-red-500/10 text-red-700 border border-red-500/20 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              High Risk (Refer)
+            </button>
+            <button
+              type="button"
+              aria-label="Load Moderate Risk Persona"
+              onClick={() => loadPersona("moderate")}
+              className="px-3.5 py-2 rounded-button text-caption font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              Moderate (Review)
+            </button>
+            <button
+              type="button"
+              aria-label="Load Low Risk Persona"
+              onClick={() => loadPersona("low")}
+              className="px-3.5 py-2 rounded-button text-caption font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 hover:opacity-90 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              Low Risk (Rule-Out)
+            </button>
+          </div>
+          <p className="text-caption text-muted-foreground">
+            Each persona is tuned to demonstrate a different triage tier.
+          </p>
         </div>
       </div>
 
