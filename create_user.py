@@ -1,65 +1,54 @@
 """
-create_user.py — Administrative CLI Tool to Provision LungCancer.NET Accounts.
+create_user.py — create a user account from the command line.
 
-Usage:
-  python create_user.py --username drsmith --name "Dr. Jane Smith" --role clinician
-  python create_user.py --username auditor1 --name "Alex Auditor" --role auditor --password "SecurePass123!"
+This is the ONLY way to create your first account. Credentials are never
+stored in code. Run this from your project folder:
+
+    python create_user.py --name "Dr. Your Name" --email you@example.com --role clinician
+
+Password will be prompted interactively.
 """
-from __future__ import annotations
-
 import argparse
 import getpass
 import sys
-from auth import register_user, get_user_count
+
+from auth import create_user, get_user_by_email, init_db
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Create a secure user account for LungCancer.NET")
-    parser.add_argument("--username", "-u", required=False, help="Username or clinical email (min 3 chars)")
-    parser.add_argument("--name", "-n", required=False, help="Full clinical name (e.g. 'Dr. Sarah Lin, MD')")
-    parser.add_argument("--role", "-r", choices=["clinician", "auditor", "Clinician", "Auditor"], default="Clinician", help="Role: clinician or auditor")
-    parser.add_argument("--email", "-e", required=False, help="Optional contact email")
-    parser.add_argument("--password", "-p", required=False, help="Password (min 8 chars). If omitted, prompt securely.")
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--name", required=True)
+    ap.add_argument("--email", required=True)
+    ap.add_argument("--role", default="clinician", choices=["clinician", "auditor"])
+    ap.add_argument("--password", help="Password (omit to prompt securely)")
+    args = ap.parse_args()
 
-    args = parser.parse_args()
-
-    print("=" * 60)
-    print("LungCancer.NET -- User Account Provisioning Tool")
-    print("=" * 60)
-
-    username = args.username
-    if not username:
-        username = input("Enter username or clinical email: ").strip()
-
-    name = args.name
-    if not name:
-        name = input("Enter full clinical name (e.g. Dr. Jane Doe): ").strip()
-
-    role = args.role.capitalize()
+    init_db()
+    if get_user_by_email(args.email):
+        print(f"[ERROR] Email already registered: {args.email}")
+        sys.exit(1)
 
     password = args.password
     if not password:
-        password = getpass.getpass("Enter password (min 8 characters): ")
+        password = getpass.getpass("Password (min 8 chars): ")
         confirm = getpass.getpass("Confirm password: ")
         if password != confirm:
-            print("\n❌ Error: Passwords do not match. Aborting.")
+            print("[ERROR] Passwords do not match")
             sys.exit(1)
 
-    ok, msg = register_user(
-        name=name,
-        username_or_email=username,
-        password=password,
-        role=role,
-        email=args.email,
-    )
-
-    if ok:
-        print(f"\n[OK] {msg}")
-        print(f"Total registered accounts in system: {get_user_count()}")
-        print("You can now launch the dashboard with: streamlit run app.py")
-    else:
-        print(f"\n[ERROR] Failed to create user: {msg}")
+    if len(password) < 8:
+        print("[ERROR] Password must be at least 8 characters")
         sys.exit(1)
+
+    user_id = create_user(args.name, args.email, password, args.role)
+    print()
+    print(f"[OK] User created")
+    print(f"     ID:    {user_id}")
+    print(f"     Name:  {args.name}")
+    print(f"     Email: {args.email}")
+    print(f"     Role:  {args.role}")
+    print()
+    print(f"Log in at: http://localhost:8000/docs or your React frontend")
 
 
 if __name__ == "__main__":

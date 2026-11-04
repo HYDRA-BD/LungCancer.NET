@@ -1,0 +1,238 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Clinical Status Tiers */
+  --color-tier-ruleout: var(--tier-ruleout);
+  --color-tier-ruleout-bg: var(--tier-ruleout-bg);
+  --color-tier-ruleout-border: var(--tier-ruleout-border);
+  --color-tier-review: var(--tier-review);
+  --color-tier-review-bg: var(--tier-review-bg);
+  --color-tier-review-border: var(--tier-review-border);
+  --color-tier-refer: var(--tier-refer);
+  --color-tier-refer-bg: var(--tier-refer-bg);
+  --color-tier-refer-border: var(--tier-refer-border);
+
+  /* Sidebar Tokens */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Chart Tokens */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Typography Fonts */
+  --font-sans: "Inter", "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+
+  /* Radii */
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-input: 8px;
+  --radius-tier: 9999px;
+
+  /* Shadows */
+  --shadow-elevation-1: var(--elevation-1);
+  --shadow-elevation-2: var(--elevation-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE TOKENS — Source: Figma Frame 00-design-system (Node 3:3)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Surfaces & Canvas */
+  --background: #FAFAF7;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+
+  /* Primary Brand (Deep Clinical Blue — Trust) */
+  --primary: #1E3A8A;
+  --primary-hover: #1E40AF;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary & Muted */
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #475569;
+
+  /* Accent (Warm Teal — Hope) */
+  --accent: #0D9488;
+  --accent-soft: #14B8A6;
+  --accent-foreground: #FFFFFF;
+
+  /* Destructive / Alert (REFER — Clinical Terracotta) */
+  --destructive: #B91C1C;
+  --destructive-foreground: #FFFFFF;
+
+  /* Form & Interactive Controls */
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #1E3A8A;
+
+  /* Clinical Status Tiers */
+  --tier-ruleout: #15803D;
+  --tier-ruleout-bg: #F0FDF4;
+  --tier-ruleout-border: #BBF7D0;
+
+  --tier-review: #B45309;
+  --tier-review-bg: #FFFBEB;
+  --tier-review-border: #FDE68A;
+
+  --tier-refer: #B91C1C;
+  --tier-refer-bg: #FEF2F2;
+  --tier-refer-border: #FECACA;
+
+  /* Data Visualization / Charts */
+  --chart-1: #1E3A8A;
+  --chart-2: #0D9488;
+  --chart-3: #15803D;
+  --chart-4: #B45309;
+  --chart-5: #B91C1C;
+
+  /* Sidebar */
+  --sidebar: #F8FAFC;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #1E3A8A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #0D9488;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #1E3A8A;
+
+  /* Geometry & Elevation */
+  --radius: 0.75rem; /* 12px */
+  --elevation-1: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --elevation-2: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE TOKENS — Source: Figma Frame 00-design-system (Node 3:3)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.dark {
+  /* Surfaces & Canvas */
+  --background: #0F172A;
+  --foreground: #F1F5F9;
+  --card: #1E293B;
+  --card-foreground: #F1F5F9;
+  --popover: #1E293B;
+  --popover-foreground: #F1F5F9;
+
+  /* Primary Brand (Accessible Blue in Dark Theme) */
+  --primary: #3B82F6;
+  --primary-hover: #60A5FA;
+  --primary-foreground: #0F172A;
+
+  /* Secondary & Muted */
+  --secondary: #1E293B;
+  --secondary-foreground: #F1F5F9;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+
+  /* Accent (Warm Teal Soft in Dark Theme) */
+  --accent: #14B8A6;
+  --accent-soft: #2DD4BF;
+  --accent-foreground: #0F172A;
+
+  /* Destructive / Alert (REFER in Dark Theme) */
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+
+  /* Form & Interactive Controls */
+  --border: #334155;
+  --input: #334155;
+  --ring: #3B82F6;
+
+  /* Clinical Status Tiers */
+  --tier-ruleout: #22C55E;
+  --tier-ruleout-bg: #052E16;
+  --tier-ruleout-border: #166534;
+
+  --tier-review: #F59E0B;
+  --tier-review-bg: #451A03;
+  --tier-review-border: #92400E;
+
+  --tier-refer: #EF4444;
+  --tier-refer-bg: #450A0A;
+  --tier-refer-border: #991B1B;
+
+  /* Data Visualization / Charts */
+  --chart-1: #3B82F6;
+  --chart-2: #14B8A6;
+  --chart-3: #22C55E;
+  --chart-4: #F59E0B;
+  --chart-5: #EF4444;
+
+  /* Sidebar */
+  --sidebar: #1E293B;
+  --sidebar-foreground: #F1F5F9;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #0F172A;
+  --sidebar-accent: #14B8A6;
+  --sidebar-accent-foreground: #0F172A;
+  --sidebar-border: #334155;
+  --sidebar-ring: #3B82F6;
+
+  /* Elevation */
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLINICAL ACCESSIBILITY & BASE RESETS (45–80 Age Accessibility)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100vh;
+  }
+  html {
+    @apply font-sans;
+  }
+}

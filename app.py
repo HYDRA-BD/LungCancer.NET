@@ -64,7 +64,78 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+# ================================================================
+# DESIGN SYSTEM — Inter + JetBrains Mono + Figma tokens
+# ================================================================
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap');
 
+html, body, [class*="css"], .stApp {
+    font-family: 'Inter', -apple-system, sans-serif !important;
+}
+
+h1 { font-size: 32px !important; font-weight: 700 !important; letter-spacing: -0.02em !important; }
+h2 { font-size: 24px !important; font-weight: 600 !important; }
+h3 { font-size: 20px !important; font-weight: 600 !important; }
+p, label, .stMarkdown, .stText { font-size: 18px !important; line-height: 1.6 !important; }
+
+.stButton > button {
+    height: 48px !important;
+    min-height: 48px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    padding: 14px 24px !important;
+    transition: all 0.2s ease !important;
+}
+.stButton > button[kind="primary"] {
+    background-color: #1E3A8A !important;
+    color: white !important;
+    border: none !important;
+}
+.stButton > button[kind="primary"]:hover {
+    background-color: #1E40AF !important;
+}
+
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stSelectbox > div > div > div {
+    height: 48px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    padding: 12px 14px !important;
+}
+
+[data-testid="stMetricValue"] {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 40px !important;
+    font-weight: 700 !important;
+    color: #1E3A8A !important;
+}
+[data-testid="stMetricLabel"] {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: #475569 !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04) !important;
+}
+[data-testid="stExpander"] {
+    border-radius: 12px !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+div[data-testid="stAlert"] {
+    border-radius: 12px !important;
+    font-size: 16px !important;
+}
+</style>
+""", unsafe_allow_html=True)
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
 ASSETS_DIR = Path(__file__).parent / "assets"
