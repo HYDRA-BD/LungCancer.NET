@@ -28,7 +28,6 @@ specialist_out/triage_decisions.csv
 specialist_out/triage_audit.csv
 # Vector store (rebuild with: python rag.py --ingest)
 artifacts/chroma/
-artifacts/aqi_5yr_cache.json
 artifacts/aqi_errors.json
 # Caches and logs
 *.log

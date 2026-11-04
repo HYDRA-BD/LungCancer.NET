@@ -1,0 +1,306 @@
+{
+  "created": "2026-11-02T11:11:27.399968",
+  "states": {
+    "Alabama": {
+      "aqi_5yr": 48.14247684633408,
+      "pm25_5yr": 9.240159571207085,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Alaska": {
+      "aqi_5yr": 34.69923283721086,
+      "pm25_5yr": 2.9068943045078015,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Arizona": {
+      "aqi_5yr": 46.455554095377565,
+      "pm25_5yr": 5.084899994466812,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Arkansas": {
+      "aqi_5yr": 48.280133871661576,
+      "pm25_5yr": 9.013611821747158,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "California": {
+      "aqi_5yr": 53.24930507376652,
+      "pm25_5yr": 10.374031100122899,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Colorado": {
+      "aqi_5yr": 47.204283558009074,
+      "pm25_5yr": 4.2641698403142625,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Connecticut": {
+      "aqi_5yr": 48.938134482618864,
+      "pm25_5yr": 9.631271876640934,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Delaware": {
+      "aqi_5yr": 48.72963312165631,
+      "pm25_5yr": 9.180770039576561,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Florida": {
+      "aqi_5yr": 52.24583426772527,
+      "pm25_5yr": 10.615389425318112,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Georgia": {
+      "aqi_5yr": 43.32666913285152,
+      "pm25_5yr": 7.856932615626407,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Hawaii": {
+      "aqi_5yr": 33.548738678480376,
+      "pm25_5yr": 5.614086766757634,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Idaho": {
+      "aqi_5yr": 43.05182827613409,
+      "pm25_5yr": 7.263045030882838,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Illinois": {
+      "aqi_5yr": 44.15308779508315,
+      "pm25_5yr": 8.200518173385406,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Indiana": {
+      "aqi_5yr": 46.31521190989817,
+      "pm25_5yr": 9.041255857091844,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Iowa": {
+      "aqi_5yr": 43.54510048385559,
+      "pm25_5yr": 8.229954239604439,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Kansas": {
+      "aqi_5yr": 40.21075595113136,
+      "pm25_5yr": 6.289416784030571,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Kentucky": {
+      "aqi_5yr": 44.041270811631044,
+      "pm25_5yr": 8.087390365934242,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Louisiana": {
+      "aqi_5yr": 43.83103239950247,
+      "pm25_5yr": 7.785054463372145,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Maine": {
+      "aqi_5yr": 45.417124452938566,
+      "pm25_5yr": 7.989253274147806,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Maryland": {
+      "aqi_5yr": 53.99146610128854,
+      "pm25_5yr": 11.413934345545826,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Massachusetts": {
+      "aqi_5yr": 45.21114879651016,
+      "pm25_5yr": 8.305670815704948,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Michigan": {
+      "aqi_5yr": 42.171378769925155,
+      "pm25_5yr": 7.24467874234579,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Minnesota": {
+      "aqi_5yr": 42.54675324546338,
+      "pm25_5yr": 7.497040412954923,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Mississippi": {
+      "aqi_5yr": 45.78138050427857,
+      "pm25_5yr": 8.591545634661255,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Missouri": {
+      "aqi_5yr": 44.22898867959555,
+      "pm25_5yr": 8.07083740081039,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Montana": {
+      "aqi_5yr": 42.59638195252073,
+      "pm25_5yr": 6.178348066279294,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Nebraska": {
+      "aqi_5yr": 41.300923182284016,
+      "pm25_5yr": 7.074549524178996,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Nevada": {
+      "aqi_5yr": 47.78199870843947,
+      "pm25_5yr": 4.849282906357329,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "New Hampshire": {
+      "aqi_5yr": 39.11552124024033,
+      "pm25_5yr": 6.192146498228148,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "New Jersey": {
+      "aqi_5yr": 54.765451403481954,
+      "pm25_5yr": 12.00237820988126,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "New Mexico": {
+      "aqi_5yr": 43.485133200903206,
+      "pm25_5yr": 4.898456036338221,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "New York": {
+      "aqi_5yr": 40.252187464671714,
+      "pm25_5yr": 6.819986208378089,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "North Carolina": {
+      "aqi_5yr": 48.895121955267534,
+      "pm25_5yr": 9.573465544022678,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "North Dakota": {
+      "aqi_5yr": 42.24417101435533,
+      "pm25_5yr": 7.778431167157427,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Ohio": {
+      "aqi_5yr": 45.06375601007865,
+      "pm25_5yr": 8.538480338188887,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Oklahoma": {
+      "aqi_5yr": 43.90247886252971,
+      "pm25_5yr": 7.398637657963816,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Oregon": {
+      "aqi_5yr": 41.45342599094857,
+      "pm25_5yr": 5.4930131734549175,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Pennsylvania": {
+      "aqi_5yr": 42.82826251722766,
+      "pm25_5yr": 7.602129159103188,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Rhode Island": {
+      "aqi_5yr": 44.70611243267673,
+      "pm25_5yr": 7.936941859139525,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "South Carolina": {
+      "aqi_5yr": 48.300974437493444,
+      "pm25_5yr": 9.080262700721061,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "South Dakota": {
+      "aqi_5yr": 40.61879316193771,
+      "pm25_5yr": 7.013745170653665,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Tennessee": {
+      "aqi_5yr": 44.522631935154244,
+      "pm25_5yr": 8.138886859199111,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 3
+    },
+    "Texas": {
+      "aqi_5yr": 42.09485871593132,
+      "pm25_5yr": 6.947656321401987,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Utah": {
+      "aqi_5yr": 46.6752503708643,
+      "pm25_5yr": 5.512999625545673,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Vermont": {
+      "aqi_5yr": 38.863516197189824,
+      "pm25_5yr": 6.138914565771932,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Virginia": {
+      "aqi_5yr": 45.21259137830417,
+      "pm25_5yr": 8.207165246284227,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Washington": {
+      "aqi_5yr": 40.21982835058922,
+      "pm25_5yr": 6.580432246155203,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "West Virginia": {
+      "aqi_5yr": 41.17399895477045,
+      "pm25_5yr": 6.28688233424451,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Wisconsin": {
+      "aqi_5yr": 44.89139271079151,
+      "pm25_5yr": 8.665015272322822,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    },
+    "Wyoming": {
+      "aqi_5yr": 46.76059400249491,
+      "pm25_5yr": 5.4576294879980205,
+      "source": "training_cache:aqi_cache.csv",
+      "years_covered": 4
+    }
+  },
+  "errors": {}
+}
