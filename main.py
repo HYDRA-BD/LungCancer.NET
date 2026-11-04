@@ -66,6 +66,8 @@ REPORT_CONFIG = {
 _aqi_cache: dict = {"states": {}, "errors": {}}
 
 
+from contextlib import asynccontextmanager
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _aqi_cache
@@ -75,6 +77,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"AQI cache: {len(_aqi_cache.get('states', {}))} states")
     except Exception as e:
         logger.warning(f"AQI cache load failed: {e}")
+    yield
 
 
 app = FastAPI(
