@@ -24,14 +24,22 @@ export default function ResultsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("analysis");
-    if (!raw) {
+    const rawAnalysis = sessionStorage.getItem("analysis");
+    const rawPatient = sessionStorage.getItem("patient");
+    if (!rawAnalysis) {
       router.replace("/intake");
       return;
     }
 
     try {
-      const parsed: AnalyzeResponse = JSON.parse(raw);
+      const parsed: AnalyzeResponse = JSON.parse(rawAnalysis);
+      if (rawPatient) {
+        try {
+          parsed.patient = JSON.parse(rawPatient);
+        } catch {
+          // ignore
+        }
+      }
       setAnalysis(parsed);
       setCurrentUser(getCurrentUser());
     } catch {
@@ -55,6 +63,11 @@ export default function ResultsPage() {
   }
 
   const { prediction, guidelines, summary, aqi, patient } = analysis;
+
+  const patientId =
+    (patient as { patient_id?: string })?.patient_id ||
+    sessionStorage.getItem("patient_id") ||
+    "PT-CURRENT";
 
   // ── Null-safe score formatting via fmt() ────────────────────────────────────
   // Backend returns a 0-1 probability; display as percentage.
@@ -128,17 +141,22 @@ export default function ResultsPage() {
         <div className="text-caption font-mono text-muted-foreground">
           Subject:{" "}
           <strong className="text-foreground">
-            {(patient as { patient_id?: string })?.patient_id || "PT-CURRENT"}
+            {patientId}
           </strong>
         </div>
       </div>
 
-      {/* HERO TRIAGE BANNER */}
+      {/* HERO TRIAGE BANNER with Patient ID caption */}
       <div
         className={`rounded-card border-2 p-6 sm:p-8 space-y-8 shadow-elevation-2 transition-all ${currentStyle.bg}`}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-border/40">
-          <TierBadge tier={prediction.tier} size="lg" />
+          <div className="flex flex-wrap items-center gap-3">
+            <TierBadge tier={prediction.tier} size="lg" />
+            <span className="text-caption font-mono px-2.5 py-1 rounded bg-background/80 border border-border/60 text-foreground font-semibold">
+              Patient ID: {patientId}
+            </span>
+          </div>
           {aqi && aqi.aqi_5yr !== null && aqi.aqi_5yr !== undefined && (
             <div className="text-caption font-mono text-muted-foreground">
               Regional AQI:{" "}
@@ -152,9 +170,14 @@ export default function ResultsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
           <div className="space-y-2">
-            <span className="text-micro font-medium uppercase tracking-wider text-muted-foreground block">
-              Calculated Ensemble Risk Probability
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-micro font-medium uppercase tracking-wider text-muted-foreground block">
+                Calculated Ensemble Risk Probability
+              </span>
+              <span className="text-micro font-mono text-muted-foreground">
+                Ref: {patientId}
+              </span>
+            </div>
             <div
               className={`text-4xl md:text-clinical-val font-mono font-bold tracking-tight ${currentStyle.text}`}
             >

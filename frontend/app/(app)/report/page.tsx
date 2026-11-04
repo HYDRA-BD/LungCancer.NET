@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { generateReport, PatientInputData } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   FileCheck,
   ArrowLeft,
@@ -39,6 +40,7 @@ export default function ReportPage() {
         const pid = patient.patient_id || "PATIENT";
         setPatientId(pid);
 
+        console.log("Generating report for:", patient.patient_id);
         const pdfBlob = await generateReport(patient);
         const generatedFilename = `LungCancer_${pid}_${Date.now()}.pdf`;
         setFilename(generatedFilename);
@@ -54,6 +56,7 @@ export default function ReportPage() {
         a.click();
         document.body.removeChild(a);
 
+        toast.success(`Report downloaded for ${patient.patient_id}`);
         setStatus("started");
       } catch {
         setStatus("error");

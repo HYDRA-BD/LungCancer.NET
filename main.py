@@ -72,6 +72,17 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     global _aqi_cache
     init_db()
+
+    # ── SEED DEFAULT USER (survives Render redeploys) ──
+    try:
+        from auth import get_user_by_email, create_user
+        if not get_user_by_email("smjarifhaidera@gmail.com"):
+            create_user("S.M. Jarif Haider Amio", "smjarifhaidera@gmail.com",
+                        "qwertyuiop", "clinician")
+            logger.info("Seeded default user: smjarifhaidera@gmail.com")
+    except Exception as e:
+        logger.warning(f"User seed failed: {e}")
+
     try:
         _aqi_cache = _load_cache()
         logger.info(f"AQI cache: {len(_aqi_cache.get('states', {}))} states")

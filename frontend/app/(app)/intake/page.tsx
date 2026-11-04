@@ -21,8 +21,7 @@ import {
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface IntakeFormData {
-  patientId: string;
-  age: number;
+    age: number;
   sex: number; // 1 = Male, 2 = Female
   state: string;
   unit: "metric" | "imperial";
@@ -52,10 +51,18 @@ export default function IntakePage() {
   const [statesList, setStatesList] = useState<StateAQI[]>([]);
   const [isLoadingStates, setIsLoadingStates] = useState(true);
 
+  // Clear old state on navigation back to /intake
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("analysis");
+      sessionStorage.removeItem("patient");
+      sessionStorage.removeItem("patient_id");
+    }
+  }, []);
+
   // Single Form State Object across step navigation
   const [formData, setFormData] = useState<IntakeFormData>({
-    patientId: "PT-2026-0891",
-    age: 66,
+        age: 66,
     sex: 1, // Male
     state: "Ohio",
     unit: "imperial",
@@ -260,7 +267,7 @@ export default function IntakePage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     const patientPayload: PatientInputData = {
-      patient_id: formData.patientId,
+      patient_id: "",
       age: formData.age,
       bmi,
       pack_years: formData.packYears,
@@ -284,7 +291,9 @@ export default function IntakePage() {
       const response = await analyze(patientPayload);
       if (typeof window !== "undefined") {
         sessionStorage.setItem("analysis", JSON.stringify(response));
-        sessionStorage.setItem("patient", JSON.stringify(patientPayload));
+        sessionStorage.setItem("patient", JSON.stringify(response.patient));
+        const genPid = (response.patient as { patient_id?: string })?.patient_id || "";
+        sessionStorage.setItem("patient_id", genPid);
       }
       router.push("/results");
     } catch {
